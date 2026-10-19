@@ -1,0 +1,40 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Kebun Sawit Simulator"
+config/description="Simulator kebun sawit — MVP offline. Lihat README.md."
+run/main_scene="res://scenes/MainMenu.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Database="*res://autoload/Database.gd"
+GameState="*res://autoload/GameState.gd"
+TimeManager="*res://autoload/TimeManager.gd"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep_width"
+
+[gui]
+
+theme/custom="res://assets/ui/modernist_theme.tres"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.953, 0.949, 0.949, 1)

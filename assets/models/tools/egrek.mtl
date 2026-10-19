@@ -1,0 +1,30 @@
+# egrek.mtl — material untuk egrek.obj (ditambahkan manual, mtllib asli hilang)
+# Warna dipilih sesuai nama material yang dirujuk di egrek.obj (usemtl).
+
+newmtl pole_black
+Ka 0.015 0.015 0.015
+Kd 0.045 0.045 0.045
+Ks 0.12 0.12 0.12
+Ns 20
+illum 2
+
+newmtl rubber_black
+Ka 0.02 0.02 0.02
+Kd 0.06 0.06 0.06
+Ks 0.05 0.05 0.05
+Ns 8
+illum 2
+
+newmtl socket_steel
+Ka 0.1 0.1 0.11
+Kd 0.58 0.58 0.60
+Ks 0.6 0.6 0.6
+Ns 90
+illum 2
+
+newmtl blade_steel
+Ka 0.12 0.12 0.13
+Kd 0.70 0.71 0.73
+Ks 0.75 0.75 0.75
+Ns 140
+illum 2

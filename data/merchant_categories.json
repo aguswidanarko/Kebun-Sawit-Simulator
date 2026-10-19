@@ -1,0 +1,59 @@
+{
+  "_catatan": "Kategori Pedagang (urutan chip) + nama misi khusus.",
+  "categories": [
+    {
+      "id": "semua",
+      "label": "Semua"
+    },
+    {
+      "id": "bibit",
+      "label": "Bibit sawit"
+    },
+    {
+      "id": "lahan",
+      "label": "Lahan"
+    },
+    {
+      "id": "obat",
+      "label": "Tanaman obat"
+    },
+    {
+      "id": "serangga",
+      "label": "Serangga"
+    },
+    {
+      "id": "jamur",
+      "label": "Jamur"
+    },
+    {
+      "id": "batu",
+      "label": "Batu berharga"
+    },
+    {
+      "id": "hewan",
+      "label": "Hewan"
+    },
+    {
+      "id": "alat",
+      "label": "Alat kerja"
+    },
+    {
+      "id": "kendaraan",
+      "label": "Kendaraan"
+    }
+  ],
+  "missions": [
+    {
+      "id": "dataran",
+      "label": "Misi: Ekspedisi Hutan Dataran"
+    },
+    {
+      "id": "sungai",
+      "label": "Misi: Susur Sungai C1"
+    },
+    {
+      "id": "malam",
+      "label": "Misi: Patroli Malam"
+    }
+  ]
+}

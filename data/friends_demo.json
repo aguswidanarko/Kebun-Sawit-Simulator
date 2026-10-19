@@ -1,0 +1,62 @@
+{
+  "_catatan": "Snapshot kebun teman (mode kunjungan read-only). cells: angka = kesehatan blok, b = pembukaan, s = siap tanam, k = kosong.",
+  "friends": [
+    {
+      "name": "Kebun Tepi Sungai",
+      "owner": "Raka",
+      "prof": "Ahli Budidaya",
+      "badge": "★",
+      "img": "assets/plantation2.jpg",
+      "cells": [
+        0.93,
+        0.88,
+        0.9,
+        0.81,
+        0.95,
+        0.86,
+        0.78,
+        "b",
+        "k"
+      ],
+      "golden": 14
+    },
+    {
+      "name": "Kebun Dataran",
+      "owner": "Sari",
+      "prof": "Analis Bisnis",
+      "badge": "⚑",
+      "img": "assets/plantation3.jpg",
+      "cells": [
+        0.72,
+        0.8,
+        0.66,
+        0.9,
+        "s",
+        "k",
+        "k",
+        "k",
+        "k"
+      ],
+      "golden": 3
+    },
+    {
+      "name": "Kebun Bukit Hijau",
+      "owner": "Dedi",
+      "prof": "Eksekutor Lapangan",
+      "badge": "",
+      "img": "assets/plantation4.jpg",
+      "cells": [
+        0.9,
+        0.91,
+        0.87,
+        0.85,
+        0.92,
+        0.89,
+        0.9,
+        0.88,
+        0.84
+      ],
+      "golden": 21
+    }
+  ]
+}

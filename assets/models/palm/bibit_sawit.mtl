@@ -1,0 +1,37 @@
+# bibit_sawit.mtl — material untuk bibit_sawit.obj (ditambahkan manual, mtllib asli hilang)
+# Warna dipilih sesuai nama material yang dirujuk di bibit_sawit.obj (usemtl).
+
+newmtl polybag_black
+Ka 0.02 0.02 0.02
+Kd 0.05 0.05 0.05
+Ks 0.08 0.08 0.08
+Ns 10
+illum 2
+
+newmtl soil
+Ka 0.08 0.05 0.03
+Kd 0.28 0.18 0.11
+Ks 0.02 0.02 0.02
+Ns 4
+illum 2
+
+newmtl stem_brown
+Ka 0.09 0.06 0.03
+Kd 0.36 0.24 0.13
+Ks 0.05 0.05 0.05
+Ns 6
+illum 2
+
+newmtl rachis_green
+Ka 0.05 0.09 0.02
+Kd 0.24 0.42 0.10
+Ks 0.08 0.08 0.08
+Ns 10
+illum 2
+
+newmtl leaf_green
+Ka 0.04 0.1 0.02
+Kd 0.20 0.46 0.12
+Ks 0.05 0.05 0.05
+Ns 8
+illum 2

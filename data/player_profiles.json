@@ -1,0 +1,50 @@
+[
+  {
+    "id": "pekerja_aktif",
+    "name": "Pak Arman — Mulai dari Lapangan",
+    "short_name": "Pak Arman",
+    "role_tag": "EKSEKUTOR LAPANGAN",
+    "rarity": "SR",
+    "accent_hex": "e5793a",
+    "emoji": "👷",
+    "portrait": "res://assets/portraits/arman.png",
+    "prolog": "Puluhan tahun bekerja membuat Arman paham bahwa pekerjaan besar tidak selesai hanya dengan niat. Setelah menerima uang pisah dari perusahaan konstruksi, ia memutuskan membangun kebun sawit.",
+    "modifiers": { "work_speed_multiplier": 1.10 },
+    "buff_text": "Pekerjaan lapangan +10% lebih cepat (gulma, perbaikan jalan, mekanis).",
+    "challenge_text": "Pengetahuan budidaya & analisis keuangan standar.",
+    "tutorial": "Jadwal kerja, alokasi tenaga kerja, selesai 1 pekerjaan tanpa lewat anggaran.",
+    "balancing_version": "0.1"
+  },
+  {
+    "id": "anak_pengusaha",
+    "name": "Nadia — Sang Analis",
+    "short_name": "Nadia",
+    "role_tag": "ANALIS BISNIS",
+    "rarity": "SR",
+    "accent_hex": "2a9bd4",
+    "emoji": "📊",
+    "portrait": "res://assets/portraits/nadia.png",
+    "prolog": "Nadia mendapat kepercayaan ayahnya untuk mengelola modal. Ia terbiasa membaca angka dan menghitung risiko, tetapi tetap harus belajar membaca kondisi lahan.",
+    "modifiers": { "input_discount": 0.05, "cashflow_projection": true, "weather_forecast_days": 5 },
+    "buff_text": "Diskon 5% input + prakiraan cuaca 5 hari (bisa menjadwalkan semprot saat cerah).",
+    "challenge_text": "Eksekusi lapangan & diagnosis tanaman standar.",
+    "tutorial": "Bandingkan 3 opsi penggunaan modal, pilih sesuai target arus kas.",
+    "balancing_version": "0.1"
+  },
+  {
+    "id": "mahasiswa_pertanian",
+    "name": "Bima — Pengelola Berbasis Ilmu",
+    "short_name": "Bima",
+    "role_tag": "AHLI BUDIDAYA",
+    "rarity": "SR",
+    "accent_hex": "43a047",
+    "emoji": "🎓",
+    "portrait": "res://assets/portraits/bima.png",
+    "prolog": "Bima dan sepuluh temannya ingin membuktikan ilmu pertanian bisa diterapkan di usaha nyata. Mereka mengumpulkan modal bersama dan menunjuk Bima mengelolanya.",
+    "modifiers": { "treatment_effectiveness_bonus": 0.10, "requires_correct_diagnosis": true },
+    "buff_text": "Efektivitas perlakuan +10% HANYA jika diagnosis & rekomendasi benar.",
+    "challenge_text": "Negosiasi, pengelolaan tim, pembiayaan standar.",
+    "tutorial": "Identifikasi gejala, pilih tindakan sesuai standar, catat biaya & hasil.",
+    "balancing_version": "0.1"
+  }
+]

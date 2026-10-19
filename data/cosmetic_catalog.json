@@ -1,0 +1,284 @@
+[
+  {
+    "_catatan": "Katalog kosmetik. SEMUA item di sini MURNI VISUAL — tidak memberi keunggulan gameplay apa pun (lihat Skenario Awal §5-6, no pay-to-win). price_rp pakai uang dalam game (bukan uang nyata). tier menandai jenjang harga & kelangkaan visual (dipakai shop utk warna label, bukan utk efek gameplay): standar (gratis, 1 per kategori, dimiliki sejak awal) < biasa < premium < eksklusif. Kategori alat_egrek/alat_sprayer/alat_angkong SUDAH bisa dibeli/dipakai tapi BELUM punya hook render 3D di tangan pemain (baru dipakai NPC pemanen cutscene RantaiPascapanen) — sengaja diberi harga tier rendah (standar/biasa saja) sampai hook-nya ada, supaya tidak menjual efek yang belum kelihatan dgn harga mahal."
+  },
+  {
+    "id": "kos_default",
+    "category": "kostum",
+    "name": "Karakter Standar",
+    "price_rp": 0,
+    "tier": "standar",
+    "model": "res://assets/models/character/human.glb",
+    "desc": "Karakter dasar."
+  },
+  {
+    "id": "kos_pekerja",
+    "category": "kostum",
+    "name": "Seragam Pekerja",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "model": "res://assets/models/character/worker.glb",
+    "desc": "Karakter pekerja lapangan (CC0). Punya animasi Lambaian penuh utk emote."
+  },
+  {
+    "id": "kos_kasual",
+    "category": "kostum",
+    "name": "Kostum Kasual",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "model": "res://assets/models/character/man.glb",
+    "desc": "Pakaian santai sehari-hari (CC0)."
+  },
+  {
+    "id": "kos_jas",
+    "category": "kostum",
+    "name": "Setelan Jas",
+    "price_rp": 650000,
+    "tier": "premium",
+    "model": "res://assets/models/character/suit.glb",
+    "desc": "Tampil necis di kebun sendiri (CC0)."
+  },
+  {
+    "id": "id_standar",
+    "category": "identitas",
+    "name": "Papan Nama Standar",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": {},
+    "desc": "Nama kebun biasa."
+  },
+  {
+    "id": "id_daun",
+    "category": "identitas",
+    "name": "Lencana Daun",
+    "price_rp": 250000,
+    "tier": "biasa",
+    "payload": { "badge": "🌿" },
+    "desc": "Lencana daun di nama kebun."
+  },
+  {
+    "id": "id_bendera",
+    "category": "identitas",
+    "name": "Bendera Kebun",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "payload": { "badge": "⚑" },
+    "desc": "Bendera di nama kebun."
+  },
+  {
+    "id": "id_bintang",
+    "category": "identitas",
+    "name": "Lencana Bintang",
+    "price_rp": 550000,
+    "tier": "premium",
+    "payload": { "badge": "⭐" },
+    "desc": "Bintang di nama kebun."
+  },
+  {
+    "id": "id_emas",
+    "category": "identitas",
+    "name": "Logo Emas",
+    "price_rp": 1200000,
+    "tier": "eksklusif",
+    "payload": { "badge": "★" },
+    "desc": "Lencana paling bergengsi di nama kebun."
+  },
+  {
+    "id": "emo_panen",
+    "category": "emote",
+    "name": "Pose Panen",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": { "anim_key": "Working" },
+    "desc": "Pose merayakan hasil panen — animasi penuh dgn kostum Standar."
+  },
+  {
+    "id": "emo_lambai",
+    "category": "emote",
+    "name": "Lambaian",
+    "price_rp": 200000,
+    "tier": "biasa",
+    "payload": { "anim_key": "Wave" },
+    "desc": "Emote menyapa — animasi penuh dgn kostum Seragam Pekerja, kostum lain diam sopan."
+  },
+  {
+    "id": "emo_semangat",
+    "category": "emote",
+    "name": "Semangat!",
+    "price_rp": 400000,
+    "tier": "premium",
+    "payload": { "anim_key": "Punch" },
+    "desc": "Kepalan tangan penuh semangat — animasi berfungsi di SEMUA kostum."
+  },
+  {
+    "id": "ken_none",
+    "category": "kendaraan",
+    "name": "Tanpa Kendaraan",
+    "price_rp": 0,
+    "tier": "standar",
+    "model": "",
+    "desc": "Belum punya kendaraan."
+  },
+  {
+    "id": "ken_motor",
+    "category": "kendaraan",
+    "name": "Motor Trail",
+    "price_rp": 350000,
+    "tier": "biasa",
+    "model": "res://assets/models/vehicle/motor_trail.obj",
+    "desc": "Motor trail terparkir di kebun (CC0, skin — bukan kendaraan fungsional pedagang)."
+  },
+  {
+    "id": "ken_pikap_tua",
+    "category": "kendaraan",
+    "name": "Pikap Bekas",
+    "price_rp": 750000,
+    "tier": "premium",
+    "model": "res://assets/models/vehicle/mobil_pick_up.glb",
+    "desc": "Pikap bekas pakai, kesan penuh pengalaman (CC0, skin)."
+  },
+  {
+    "id": "ken_pikap",
+    "category": "kendaraan",
+    "name": "Pikap Kerja",
+    "price_rp": 900000,
+    "tier": "premium",
+    "model": "res://assets/models/vehicle/pickup.glb",
+    "desc": "Pikap kerja mengkilap (CC0, skin), terparkir di kebun."
+  },
+  {
+    "id": "ken_traktor",
+    "category": "kendaraan",
+    "name": "Traktor Mini",
+    "price_rp": 1500000,
+    "tier": "eksklusif",
+    "model": "res://assets/models/vehicle/traktor_mini.obj",
+    "desc": "Traktor mini gagah terparkir di kebun (CC0, skin paling eksklusif)."
+  },
+  {
+    "id": "ui_hijau",
+    "category": "tema_ui",
+    "name": "Tema Hijau Kebun",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": { "accent": "2e7d32" },
+    "desc": "Tema default."
+  },
+  {
+    "id": "ui_langit",
+    "category": "tema_ui",
+    "name": "Tema Biru Langit",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "payload": { "accent": "2a6bd4" },
+    "desc": "Aksen biru sejuk."
+  },
+  {
+    "id": "ui_senja",
+    "category": "tema_ui",
+    "name": "Tema Senja Oranye",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "payload": { "accent": "e5793a" },
+    "desc": "Aksen oranye hangat."
+  },
+  {
+    "id": "ui_malam",
+    "category": "tema_ui",
+    "name": "Tema Malam",
+    "price_rp": 550000,
+    "tier": "premium",
+    "payload": { "accent": "90a4ae" },
+    "desc": "Aksen abu gelap."
+  },
+  {
+    "id": "egr_std",
+    "category": "alat_egrek",
+    "name": "Egrek Standar",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": {},
+    "model": "res://assets/models/tools/egrek.obj",
+    "desc": "Gagang aluminium, pisau baja."
+  },
+  {
+    "id": "egr_pita",
+    "category": "alat_egrek",
+    "name": "Egrek Pita Merah",
+    "price_rp": 250000,
+    "tier": "biasa",
+    "payload": { "color": "c62828" },
+    "model": "res://assets/models/tools/egrek.obj",
+    "desc": "Pita merah di gagang (kosmetik)."
+  },
+  {
+    "id": "egr_karbon",
+    "category": "alat_egrek",
+    "name": "Egrek Gagang Karbon",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "payload": { "color": "2d2b2b" },
+    "model": "res://assets/models/tools/egrek.obj",
+    "desc": "Gagang hitam doff (kosmetik)."
+  },
+  {
+    "id": "spr_std",
+    "category": "alat_sprayer",
+    "name": "Sprayer Punggung 15 L",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": {},
+    "model": "res://assets/models/tools/sprayer.glb",
+    "desc": "Tangki standar."
+  },
+  {
+    "id": "spr_kuning",
+    "category": "alat_sprayer",
+    "name": "Sprayer Kuning",
+    "price_rp": 250000,
+    "tier": "biasa",
+    "payload": { "color": "f2b600" },
+    "model": "res://assets/models/tools/sprayer.glb",
+    "desc": "Tangki kuning cerah (kosmetik)."
+  },
+  {
+    "id": "spr_loreng",
+    "category": "alat_sprayer",
+    "name": "Sprayer Loreng",
+    "price_rp": 300000,
+    "tier": "biasa",
+    "payload": { "color": "556b2f" },
+    "model": "res://assets/models/tools/sprayer.glb",
+    "desc": "Motif loreng (kosmetik)."
+  },
+  {
+    "id": "ang_std",
+    "category": "alat_angkong",
+    "name": "Angkong Standar",
+    "price_rp": 0,
+    "tier": "standar",
+    "payload": {},
+    "model": "res://assets/models/tools/angkong.obj",
+    "desc": "Gerobak roda satu."
+  },
+  {
+    "id": "ang_biru",
+    "category": "alat_angkong",
+    "name": "Angkong Biru",
+    "price_rp": 200000,
+    "tier": "biasa",
+    "payload": { "color": "1565c0" },
+    "model": "res://assets/models/tools/angkong.obj",
+    "desc": "Bak biru (kosmetik)."
+  },
+  {
+    "id": "ang_kayu",
+    "category": "alat_angkong",
+    "name": "Angkong Bak Kayu",
+    "price_rp": 250000,
+    "tier": "biasa",
+    "payload": { "color": "8d6e63" },
+    "model": "res://assets/models/tools/angkong.obj",
+    "desc": "Bak papan kayu (kosmetik)."
+  }
+]

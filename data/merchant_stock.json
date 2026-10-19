@@ -1,0 +1,285 @@
+[
+  {
+    "_catatan": "Stok yang bisa DIBELI dari Pedagang. Barang yang dibeli masuk gudang dengan harga jual dasar = 85% harga beli.",
+    "source": "design_handoff v1 (Kebun Sawit App.dc.html)",
+    "validation_status": "gameplay_placeholder"
+  },
+  {
+    "id": "kec_dam",
+    "cat": "bibit",
+    "name": "Kecambah DxP Damimas",
+    "unit": "butir",
+    "price": 9000,
+    "note": "Bersertifikat",
+    "model": "res://assets/models/palm/kecambah_sawit.obj"
+  },
+  {
+    "id": "kec_sain",
+    "cat": "bibit",
+    "name": "Kecambah DxP SAIN",
+    "unit": "butir",
+    "price": 10000,
+    "note": "Toleransi Ganoderma sedang",
+    "model": "res://assets/models/palm/kecambah_sawit.obj"
+  },
+  {
+    "id": "mn",
+    "cat": "bibit",
+    "name": "Bibit Main-nursery (12 bln)",
+    "unit": "polybag",
+    "price": 52000,
+    "note": "Siap tanam",
+    "model": "res://assets/models/palm/bibit_sawit.obj"
+  },
+  {
+    "id": "jahe",
+    "cat": "obat",
+    "name": "Bibit Jahe Merah",
+    "unit": "kg",
+    "price": 32000,
+    "note": "Untuk tumpang sari",
+    "model": "res://assets/models/3d/medicinal_plants/jahe_merah.glb"
+  },
+  {
+    "id": "sambiloto",
+    "cat": "obat",
+    "name": "Bibit Sambiloto",
+    "unit": "polybag",
+    "price": 15000,
+    "note": "Tanaman obat pahit",
+    "model": "res://assets/models/3d/medicinal_plants/sambiloto.glb"
+  },
+  {
+    "id": "pasak_bumi",
+    "cat": "obat",
+    "name": "Akar Pasak Bumi",
+    "unit": "kg",
+    "price": 250000,
+    "note": "Hasil hutan bernilai",
+    "model": "res://assets/models/3d/medicinal_plants/pasak_bumi.glb"
+  },
+  {
+    "id": "baglog",
+    "cat": "jamur",
+    "name": "Baglog Jamur Tiram",
+    "unit": "baglog",
+    "price": 3500,
+    "note": "Siap tumbuh",
+    "model": "res://assets/models/3d/mushrooms/baglog_jamur.glb"
+  },
+  {
+    "id": "jamur_tiram_raja",
+    "cat": "jamur",
+    "name": "Jamur Tiram Raja",
+    "unit": "kg",
+    "price": 45000,
+    "note": "Segar",
+    "model": "res://assets/models/3d/mushrooms/jamur_tiram_raja.glb"
+  },
+  {
+    "id": "jamur_kuping",
+    "cat": "jamur",
+    "name": "Jamur Kuping",
+    "unit": "kg",
+    "price": 38000,
+    "note": "Segar",
+    "model": "res://assets/models/3d/mushrooms/jamur_kuping.glb"
+  },
+  {
+    "id": "jamur_kancing",
+    "cat": "jamur",
+    "name": "Jamur Kancing",
+    "unit": "kg",
+    "price": 42000,
+    "note": "Segar",
+    "model": "res://assets/models/3d/mushrooms/jamur_kancing.glb"
+  },
+  {
+    "id": "jamur_shiitake",
+    "cat": "jamur",
+    "name": "Jamur Shiitake",
+    "unit": "kg",
+    "price": 65000,
+    "note": "Premium",
+    "model": "res://assets/models/3d/mushrooms/jamur_shiitake.glb"
+  },
+  {
+    "id": "stup",
+    "cat": "serangga",
+    "name": "Stup Lebah Kelulut",
+    "unit": "stup",
+    "price": 450000,
+    "note": "Koloni Trigona"
+  },
+  {
+    "id": "jangkrik",
+    "cat": "serangga",
+    "name": "Jangkrik",
+    "unit": "kotak",
+    "price": 85000,
+    "note": "Bibit ternak",
+    "model": "res://assets/models/3d/insects/jangkrik.glb"
+  },
+  {
+    "id": "kroto",
+    "cat": "serangga",
+    "name": "Kroto Semut Rangrang",
+    "unit": "kg",
+    "price": 180000,
+    "note": "Pakan burung premium",
+    "model": "res://assets/models/3d/insects/kroto_semut.glb"
+  },
+  {
+    "id": "madu_hutan",
+    "cat": "serangga",
+    "name": "Madu Hutan",
+    "unit": "botol",
+    "price": 220000,
+    "note": "Panen liar",
+    "model": "res://assets/models/3d/insects/madu_hutan.glb"
+  },
+  {
+    "id": "batu_bacan",
+    "cat": "batu",
+    "name": "Batu Bacan",
+    "unit": "butir",
+    "price": 2500000,
+    "note": "Hijau doko",
+    "model": "res://assets/models/3d/gems/batu_bacan.glb"
+  },
+  {
+    "id": "kalimaya",
+    "cat": "batu",
+    "name": "Batu Kalimaya Banten",
+    "unit": "butir",
+    "price": 4200000,
+    "note": "Opal api",
+    "model": "res://assets/models/3d/gems/batu_kalimaya_banten.glb"
+  },
+  {
+    "id": "berlian_banjar",
+    "cat": "batu",
+    "name": "Berlian Banjar Mentah",
+    "unit": "butir",
+    "price": 18000000,
+    "note": "Belum diasah",
+    "model": "res://assets/models/3d/gems/berlian_banjar_mentah.glb"
+  },
+  {
+    "id": "tyto",
+    "cat": "hewan",
+    "name": "Burung Hantu Tyto alba",
+    "unit": "pasang",
+    "price": 750000,
+    "note": "Pengendali tikus alami",
+    "model": "res://assets/models/3d/animals/burung_hantu.glb"
+  },
+  {
+    "id": "ayam_jantan",
+    "cat": "hewan",
+    "name": "Ayam Jantan",
+    "unit": "ekor",
+    "price": 150000,
+    "note": "Pejantan kampung",
+    "model": "res://assets/models/3d/animals/ayam_jantan.glb"
+  },
+  {
+    "id": "ayam_petelur",
+    "cat": "hewan",
+    "name": "Ayam Betina Petelur",
+    "unit": "ekor",
+    "price": 95000,
+    "note": "Produktif",
+    "model": "res://assets/models/3d/animals/ayam_betina_petelur.glb"
+  },
+  {
+    "id": "kambing",
+    "cat": "hewan",
+    "name": "Kambing",
+    "unit": "ekor",
+    "price": 3200000,
+    "note": "Siap pelihara",
+    "model": "res://assets/models/3d/animals/kambing.glb"
+  },
+  {
+    "id": "sapi",
+    "cat": "hewan",
+    "name": "Sapi Bali",
+    "unit": "ekor",
+    "price": 15500000,
+    "note": "Integrasi sawit–sapi",
+    "model": "res://assets/models/3d/animals/sapi_bali.glb"
+  },
+  {
+    "id": "egrek_n",
+    "cat": "alat",
+    "name": "Egrek Baru",
+    "unit": "unit",
+    "price": 450000,
+    "note": "Gagang 6 m",
+    "model": "res://assets/models/tools/egrek.obj"
+  },
+  {
+    "id": "sprayer_n",
+    "cat": "alat",
+    "name": "Sprayer Punggung 15 L",
+    "unit": "unit",
+    "price": 650000,
+    "note": "Baru",
+    "model": "res://assets/models/tools/sprayer.glb"
+  },
+  {
+    "id": "angkong_n",
+    "cat": "alat",
+    "name": "Angkong",
+    "unit": "unit",
+    "price": 900000,
+    "note": "Baru",
+    "model": "res://assets/models/tools/angkong.obj"
+  },
+  {
+    "id": "mesin_rumput",
+    "cat": "alat",
+    "name": "Mesin Potong Rumput",
+    "unit": "unit",
+    "price": 1850000,
+    "note": "Gendong 2 tak",
+    "model": "res://assets/models/tools/mesin_potong_rumput.obj"
+  },
+  {
+    "id": "traktor",
+    "cat": "kendaraan",
+    "name": "Traktor Mini",
+    "unit": "unit",
+    "price": 85000000,
+    "note": "Baru",
+    "model": "res://assets/models/vehicle/traktor_mini.obj"
+  },
+  {
+    "id": "motor_trail",
+    "cat": "kendaraan",
+    "name": "Motor Trail",
+    "unit": "unit",
+    "price": 32000000,
+    "note": "Lincah di jalan kebun",
+    "model": "res://assets/models/vehicle/motor_trail.obj"
+  },
+  {
+    "id": "pikap_n",
+    "cat": "kendaraan",
+    "name": "Pikap Bak",
+    "unit": "unit",
+    "price": 145000000,
+    "note": "Baru",
+    "model": "res://assets/models/vehicle/pickup.glb"
+  },
+  {
+    "id": "pikap_sawit",
+    "cat": "kendaraan",
+    "name": "Pikap Muatan Sawit",
+    "unit": "unit",
+    "price": 155000000,
+    "note": "Termasuk bak TBS",
+    "model": "res://assets/models/vehicle/pickup_muatan_sawit.glb"
+  }
+]

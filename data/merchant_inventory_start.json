@@ -1,0 +1,313 @@
+[
+  {
+    "_catatan": "Isi gudang awal pemain yang bisa dijual ke Pedagang. price = harga jual dasar Rp/unit; harga harian = price × (1 + trend), trend ±6%. src = id misi khusus asal item (lihat missions).",
+    "source": "design_handoff v1 (Kebun Sawit App.dc.html)",
+    "validation_status": "gameplay_placeholder"
+  },
+  {
+    "id": "kec_dam",
+    "cat": "bibit",
+    "name": "Kecambah DxP Damimas",
+    "qty": 200,
+    "unit": "butir",
+    "price": 7500,
+    "note": "Bersertifikat",
+    "model": "res://assets/models/palm/kecambah_sawit.obj"
+  },
+  {
+    "id": "pn",
+    "cat": "bibit",
+    "name": "Bibit Pre-nursery (3 bln)",
+    "qty": 120,
+    "unit": "polybag",
+    "price": 18000,
+    "note": "Dari pembibitan sendiri",
+    "model": "res://assets/models/palm/bibit_sawit.obj"
+  },
+  {
+    "id": "mn",
+    "cat": "bibit",
+    "name": "Bibit Main-nursery (12 bln)",
+    "qty": 60,
+    "unit": "polybag",
+    "price": 45000,
+    "note": "Siap tanam",
+    "model": "res://assets/models/palm/bibit_sawit.obj"
+  },
+  {
+    "id": "jahe",
+    "cat": "obat",
+    "name": "Jahe Merah",
+    "qty": 12,
+    "unit": "kg",
+    "price": 28000,
+    "note": "Tumpang sari gawangan",
+    "model": "res://assets/models/3d/medicinal_plants/jahe_merah.glb"
+  },
+  {
+    "id": "kunyit",
+    "cat": "obat",
+    "name": "Kunyit",
+    "qty": 20,
+    "unit": "kg",
+    "price": 12000,
+    "note": "Tumpang sari gawangan"
+  },
+  {
+    "id": "pasak",
+    "cat": "obat",
+    "name": "Pasak Bumi",
+    "qty": 3,
+    "unit": "kg",
+    "price": 150000,
+    "src": "dataran",
+    "note": "Akar kering",
+    "model": "res://assets/models/3d/medicinal_plants/pasak_bumi.glb"
+  },
+  {
+    "id": "sambiloto",
+    "cat": "obat",
+    "name": "Sambiloto",
+    "qty": 5,
+    "unit": "kg",
+    "price": 35000,
+    "note": "Daun kering",
+    "model": "res://assets/models/3d/medicinal_plants/sambiloto.glb"
+  },
+  {
+    "id": "kelulut",
+    "cat": "serangga",
+    "name": "Madu Kelulut (Trigona)",
+    "qty": 4,
+    "unit": "botol",
+    "price": 120000,
+    "note": "Stup di tepi blok"
+  },
+  {
+    "id": "jangkrik",
+    "cat": "serangga",
+    "name": "Jangkrik",
+    "qty": 5,
+    "unit": "kg",
+    "price": 45000,
+    "note": "Pakan burung",
+    "model": "res://assets/models/3d/insects/jangkrik.glb"
+  },
+  {
+    "id": "kroto",
+    "cat": "serangga",
+    "name": "Kroto (telur rangrang)",
+    "qty": 2,
+    "unit": "kg",
+    "price": 180000,
+    "src": "malam",
+    "note": "Panen sarang rangrang",
+    "model": "res://assets/models/3d/insects/kroto_semut.glb"
+  },
+  {
+    "id": "madu_hutan",
+    "cat": "serangga",
+    "name": "Madu Hutan",
+    "qty": 0,
+    "unit": "botol",
+    "price": 180000,
+    "src": "hutan",
+    "note": "Madu liar — hasil jelajah sabuk hutan",
+    "model": "res://assets/models/3d/insects/madu_hutan.glb"
+  },
+  {
+    "id": "merang",
+    "cat": "jamur",
+    "name": "Jamur Merang",
+    "qty": 15,
+    "unit": "kg",
+    "price": 40000,
+    "note": "Media tandan kosong sawit"
+  },
+  {
+    "id": "tiram",
+    "cat": "jamur",
+    "name": "Jamur Tiram",
+    "qty": 8,
+    "unit": "kg",
+    "price": 25000,
+    "note": "Baglog serbuk",
+    "model": "res://assets/models/3d/mushrooms/jamur_tiram_raja.glb"
+  },
+  {
+    "id": "kuping",
+    "cat": "jamur",
+    "name": "Jamur Kuping",
+    "qty": 3,
+    "unit": "kg",
+    "price": 60000,
+    "note": "Kering",
+    "model": "res://assets/models/3d/mushrooms/jamur_kuping.glb"
+  },
+  {
+    "id": "lingzhi",
+    "cat": "jamur",
+    "name": "Jamur Lingzhi",
+    "qty": 1,
+    "unit": "kg",
+    "price": 600000,
+    "src": "dataran",
+    "note": "Langka · kering"
+  },
+  {
+    "id": "kecubung",
+    "cat": "batu",
+    "name": "Akik Kecubung",
+    "qty": 2,
+    "unit": "butir",
+    "price": 350000,
+    "src": "sungai",
+    "note": "Bongkahan kasar"
+  },
+  {
+    "id": "bacan",
+    "cat": "batu",
+    "name": "Batu Bacan",
+    "qty": 1,
+    "unit": "butir",
+    "price": 1200000,
+    "src": "sungai",
+    "note": "Kualitas sedang",
+    "model": "res://assets/models/3d/gems/batu_bacan.glb"
+  },
+  {
+    "id": "kalimaya",
+    "cat": "batu",
+    "name": "Batu Kalimaya Banten",
+    "qty": 0,
+    "unit": "butir",
+    "price": 650000,
+    "src": "hutan",
+    "note": "Opal — hasil jelajah sabuk hutan",
+    "model": "res://assets/models/3d/gems/batu_kalimaya_banten.glb"
+  },
+  {
+    "id": "intan",
+    "cat": "batu",
+    "name": "Intan Martapura",
+    "qty": 0,
+    "unit": "butir",
+    "price": 8500000,
+    "src": "sungai",
+    "note": "Belum ditemukan",
+    "model": "res://assets/models/3d/gems/berlian_banjar_mentah.glb"
+  },
+  {
+    "id": "ayam",
+    "cat": "hewan",
+    "name": "Ayam Kampung",
+    "qty": 10,
+    "unit": "ekor",
+    "price": 85000,
+    "note": "Umbaran di gawangan",
+    "model": "res://assets/models/3d/animals/ayam_jantan.glb"
+  },
+  {
+    "id": "landak",
+    "cat": "hewan",
+    "name": "Landak Mini",
+    "qty": 0,
+    "unit": "ekor",
+    "price": 200000,
+    "src": "hutan",
+    "note": "Tangkapan liar — hasil jelajah sabuk hutan",
+    "model": "res://assets/models/3d/pests/landak.glb"
+  },
+  {
+    "id": "burung_hantu",
+    "cat": "hewan",
+    "name": "Burung Hantu",
+    "qty": 0,
+    "unit": "ekor",
+    "price": 500000,
+    "src": "hutan",
+    "note": "Satwa langka — hasil jelajah sabuk hutan",
+    "model": "res://assets/models/3d/animals/burung_hantu.glb"
+  },
+  {
+    "id": "monyet",
+    "cat": "hewan",
+    "name": "Monyet Ekor Panjang",
+    "qty": 0,
+    "unit": "ekor",
+    "price": 750000,
+    "src": "hutan",
+    "note": "Tangkapan liar — hasil jelajah sabuk hutan",
+    "model": "res://assets/models/3d/pests/monyet.glb"
+  },
+  {
+    "id": "kambing",
+    "cat": "hewan",
+    "name": "Kambing",
+    "qty": 2,
+    "unit": "ekor",
+    "price": 2800000,
+    "note": "Penggembalaan terkendali",
+    "model": "res://assets/models/3d/animals/kambing.glb"
+  },
+  {
+    "id": "sapi",
+    "cat": "hewan",
+    "name": "Sapi Bali",
+    "qty": 1,
+    "unit": "ekor",
+    "price": 14000000,
+    "note": "Integrasi sawit–sapi",
+    "model": "res://assets/models/3d/animals/sapi_bali.glb"
+  },
+  {
+    "id": "egrek_b",
+    "cat": "alat",
+    "name": "Egrek (bekas)",
+    "qty": 1,
+    "unit": "unit",
+    "price": 250000,
+    "note": "Kondisi 70%",
+    "model": "res://assets/models/tools/egrek.obj"
+  },
+  {
+    "id": "sprayer_b",
+    "cat": "alat",
+    "name": "Sprayer Punggung 15 L (bekas)",
+    "qty": 1,
+    "unit": "unit",
+    "price": 300000,
+    "note": "Kondisi 80%",
+    "model": "res://assets/models/tools/sprayer.glb"
+  },
+  {
+    "id": "mesin_rumput",
+    "cat": "alat",
+    "name": "Mesin Potong Rumput",
+    "qty": 1,
+    "unit": "unit",
+    "price": 1800000,
+    "note": "Kondisi 85%",
+    "model": "res://assets/models/tools/mesin_potong_rumput.obj"
+  },
+  {
+    "id": "pikap_b",
+    "cat": "kendaraan",
+    "name": "Pikap Bak (bekas)",
+    "qty": 1,
+    "unit": "unit",
+    "price": 95000000,
+    "note": "Tahun 2019",
+    "model": "res://assets/models/vehicle/mobil_pick_up.glb"
+  },
+  {
+    "id": "trail",
+    "cat": "kendaraan",
+    "name": "Motor Trail Kebun",
+    "qty": 1,
+    "unit": "unit",
+    "price": 9500000,
+    "note": "Tahun 2022",
+    "model": "res://assets/models/vehicle/motor_trail.obj"
+  }
+]

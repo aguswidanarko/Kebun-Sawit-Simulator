@@ -1,0 +1,64 @@
+{
+  "_catatan": "Pohon cerata data-driven. Lihat docs/decision_tree.md. Tambah/ubah node & teks di sini tanpa sentuh kode.",
+  "start": {
+    "pekerja_aktif": "intro_arman_1",
+    "anak_pengusaha": "intro_nadia_1",
+    "mahasiswa_pertanian": "intro_bima_1"
+  },
+  "nodes": {
+    "intro_arman_1": { "type": "narration", "text": "Setelah menerima uang pisah dari perusahaan konstruksi, Arman memutuskan membangun kebun sawitnya sendiri.", "next": "intro_arman_2" },
+    "intro_arman_2": { "type": "narration", "text": "Ia paham cara menyusun pekerjaan dan menggerakkan tim. Tapi dunia tanaman masih baru — hari ini semuanya dimulai.", "next": "invest_choice" },
+
+    "intro_nadia_1": { "type": "narration", "text": "Nadia mendapat kepercayaan ayahnya untuk mengelola modal dan membuktikan ia bisa membangun usaha sendiri.", "next": "intro_nadia_2" },
+    "intro_nadia_2": { "type": "narration", "text": "Ia terbiasa membaca angka dan menghitung risiko. Namun laporan rapi tak otomatis membuat kebun berhasil.", "next": "invest_choice" },
+
+    "intro_bima_1": { "type": "narration", "text": "Bima mendapatkan modal dari sepuluh temannya untuk membangun proyek kelapa sawit.", "next": "intro_bima_2" },
+    "intro_bima_2": { "type": "narration", "text": "Berbekal ilmu pertanian, ia yakin bisa. Tapi teori harus diterjemahkan jadi keputusan nyata — mulai hari ini.", "next": "invest_choice" },
+
+    "invest_choice": {
+      "type": "choice",
+      "text": "HARI PERTAMA.\nKe mana modal pertama diarahkan?",
+      "options": [
+        { "label": "🌱 Buka Pembibitan", "set": { "jalur": "pembibitan", "bibit": "sendiri" }, "next": "jalur_pembibitan" },
+        { "label": "🌴 Buka Kebun Sawit", "set": { "jalur": "kebun" }, "next": "jalur_kebun" }
+      ]
+    },
+    "jalur_pembibitan": { "type": "narration", "text": "Pembibitan tidak bisa langsung tanam kecambah. Tahapannya:\n1. Pesan kecambah (±1 bulan sampai tiba)\n2. Siapkan areal: pompa & saluran air, media tanah, polybag kecil, naungan\n3. Kecambah tiba → seleksi (±2%), tanam ke Pre Nursery\n4. Umur 2 bln: wajib siapkan polybag besar Main Nursery\n5. Umur 3 bln (3 daun): transplanting + seleksi\n6. Seleksi lagi umur 6 & 9 bln\n7. Umur 12 bln: seleksi final → bibit siap dijual/ditanam.\nPerawatan tiap hari: siram 2x, pupuk, kendali hama.", "next": "pembibitan_note" },
+    "pembibitan_note": { "type": "narration", "text": "Setelah lahan siap, mulai pembibitan dari panel PEMBIBITAN di Dashboard: pesan kecambah, lalu kelola tiap tahapnya.", "next": "land_type_choice" },
+    "jalur_kebun": { "type": "narration", "text": "Kebun sawit: menanam untuk produksi TBS jangka panjang. Butuh lahan lebih luas dan kesabaran. Ingat: yang ditanam ke lapangan adalah BIBIT umur 12 bulan, bukan kecambah.", "next": "bibit_choice" },
+    "bibit_choice": {
+      "type": "choice",
+      "text": "Dari mana bibit untuk kebunmu?",
+      "options": [
+        { "label": "🌱 Bibitkan sendiri — hemat, siap ±13 bln", "set": { "bibit": "sendiri" }, "next": "land_type_choice" },
+        { "label": "🪴 Beli bibit jadi — langsung, mahal", "set": { "bibit": "beli" }, "next": "land_type_choice" }
+      ]
+    },
+
+    "land_type_choice": {
+      "type": "choice",
+      "text": "Pilih jenis lahan yang akan dibuka:",
+      "options": [
+        { "label": "🌳 Areal Hutan (murah, perlu dibuka)", "set": { "tipe_lahan": "hutan" }, "next": "market_hutan" },
+        { "label": "🟫 Areal Bersih (siap tanam, mahal)", "set": { "tipe_lahan": "bersih" }, "next": "market_bersih" }
+      ]
+    },
+    "market_hutan": { "type": "land_market", "filter": "hutan", "text": "Beberapa petani/NPC menjual lahan berhutan. Pilih salah satu:", "next": "preview_note_hutan" },
+    "market_bersih": { "type": "land_market", "filter": "bersih", "text": "Beberapa lahan bersih siap olah ditawarkan. Pilih salah satu:", "next": "preview_note_bersih" },
+
+    "preview_note_hutan": { "type": "narration", "text": "Lahan ini masih berhutan — perlu dibuka lebih dulu (biaya & waktu) sebelum bisa ditanami. Lihat gambaran kebun jadinya.", "next": "preview3d" },
+    "preview_note_bersih": { "type": "narration", "text": "Lahan siap diolah. Lihat gambaran kebun jadinya.", "next": "preview3d" },
+
+    "preview3d": { "type": "preview", "text": "GAMBARAN KEBUN\n(Preview 3D yang bisa dieksplor — menyusul. Untuk kini, lanjutkan.)", "next": "confirm" },
+
+    "confirm": {
+      "type": "choice",
+      "text": "Lanjutkan dengan lahan ini?",
+      "options": [
+        { "label": "✓ Mulai Kelola Kebun", "next": "start_game" },
+        { "label": "↩ Pilih lahan lain", "next": "land_type_choice" }
+      ]
+    },
+    "start_game": { "type": "start_game", "text": "" }
+  }
+}

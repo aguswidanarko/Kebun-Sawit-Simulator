@@ -1,0 +1,37 @@
+# mesin_potong_rumput.mtl — material untuk mesin_potong_rumput.obj (ditambahkan manual, mtllib asli hilang)
+# Warna dipilih sesuai nama material yang dirujuk di mesin_potong_rumput.obj (usemtl).
+
+newmtl aluminium
+Ka 0.1 0.1 0.11
+Kd 0.62 0.63 0.65
+Ks 0.65 0.65 0.65
+Ns 100
+illum 2
+
+newmtl black_plastic
+Ka 0.015 0.015 0.015
+Kd 0.045 0.045 0.045
+Ks 0.12 0.12 0.12
+Ns 20
+illum 2
+
+newmtl blade_blue
+Ka 0.03 0.05 0.08
+Kd 0.12 0.22 0.42
+Ks 0.5 0.5 0.55
+Ns 80
+illum 2
+
+newmtl orange_plastic
+Ka 0.14 0.06 0.0
+Kd 0.90 0.38 0.04
+Ks 0.2 0.2 0.2
+Ns 24
+illum 2
+
+newmtl tank_white
+Ka 0.1 0.1 0.1
+Kd 0.88 0.88 0.86
+Ks 0.15 0.15 0.15
+Ns 20
+illum 2

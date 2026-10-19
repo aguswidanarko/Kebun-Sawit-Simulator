@@ -1,0 +1,17 @@
+[
+  { "_catatan": "Lahan dijual NPC. 'image' kosong -> kartu gradien placeholder; isi path PNG bila gambar tersedia. Harga/kelas = gameplay." },
+
+  { "id": "h_sungai", "type": "hutan", "name": "Hutan Tepi Sungai", "price_rp": 22000000, "size_ha": 1.0, "land_class": "S2", "needs_clearing": true, "image": "res://assets/bg/land_h_sungai.jpg", "desc": "Dekat sumber air, tanah subur. Perlu pembukaan sedang.",
+    "assess": { "lereng": 5.0, "tanah": "mineral", "gambut_m": 0.0, "air": "rawa" } },
+  { "id": "h_dataran", "type": "hutan", "name": "Hutan Dataran", "price_rp": 26000000, "size_ha": 1.0, "land_class": "S1", "needs_clearing": true, "image": "res://assets/bg/land_h_dataran.jpg", "desc": "Kelas lahan terbaik (S1), tapi pohon rapat — pembukaan berat.",
+    "assess": { "lereng": 4.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" } },
+  { "id": "h_rawa", "type": "hutan", "name": "Hutan Rawa", "price_rp": 15000000, "size_ha": 1.0, "land_class": "S3", "needs_clearing": true, "image": "res://assets/bg/land_h_rawa.jpg", "desc": "Paling murah. Kelas S3, drainase buruk, hasil lebih rendah.",
+    "assess": { "lereng": 2.0, "tanah": "gambut", "gambut_m": 3.5, "air": "tergenang" } },
+
+  { "id": "b_s1", "type": "bersih", "name": "Lahan Bersih Prima", "price_rp": 42000000, "size_ha": 1.0, "land_class": "S1", "needs_clearing": false, "image": "res://assets/bg/land_b_s1.jpg", "desc": "Siap tanam, kelas S1. Mahal tapi tanpa repot buka lahan.",
+    "assess": { "lereng": 3.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" } },
+  { "id": "b_s2", "type": "bersih", "name": "Lahan Bersih Standar", "price_rp": 34000000, "size_ha": 1.0, "land_class": "S2", "needs_clearing": false, "image": "res://assets/bg/land_b_s2.jpg", "desc": "Siap tanam, kelas S2. Keseimbangan harga & kualitas.",
+    "assess": { "lereng": 10.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" } },
+  { "id": "b_eks", "type": "bersih", "name": "Eks-Kebun 1 ha", "price_rp": 50000000, "size_ha": 1.0, "land_class": "S1", "needs_clearing": false, "image": "res://assets/bg/land_b_eks.jpg", "desc": "Bekas kebun, infrastruktur ada. Termahal, langsung produktif.",
+    "assess": { "lereng": 5.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" } }
+]

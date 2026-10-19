@@ -1,0 +1,88 @@
+{
+  "_catatan": "Parameter global game. SEMUA angka di sini adalah nilai gameplay, bukan data agronomis resmi. Ganti dari workbook Std_Produksi_Pupuk_Herbisida_v3.xlsx saat tersedia.",
+  "source_version": "scaffold-0.1",
+
+  "base_capital_rp": 100000000,
+  "tbs_price_rp_per_kg": 2800,
+  "price_year": 2026,
+  "price_status": "reviewed_v2",
+
+  "_model_waktu": "Menambal temuan C audit: unit waktu dikunci eksplisit di sini.",
+  "tick_unit": "hari",
+  "days_per_year": 365,
+  "harvest_rotation_days": 6,
+  "fertilizer_rotation_days": 120,
+  "spray_rotation_days": 90,
+
+  "_golden_tree": "Menambal temuan D & E audit. KEPUTUSAN: bonus Golden Tree DITAMBAHKAN DI ATAS plafon blok (bukan di-clamp jadi nol). Normal tetap dibatasi plafon varietas; kelebihan dari pokok golden = count x normal_per_pokok x (multiplier-1) ditambahkan terpisah. Dengan ~5% pokok, bonus maksimal ~+20% per blok: terasa tapi tetap terkendali.",
+  "golden_base_probability": 0.05,
+  "golden_multiplier": 5,
+  "golden_roll_phase": "akhir_pembibitan",
+  "golden_bonus_exceeds_variety_cap": true,
+
+  "_rendemen_grading": "Menambal temuan G audit. Harga jual TBS disesuaikan rendemen varietas relatif baseline, + faktor kualitas dari health blok. Nonaktifkan dengan enable_grading=false untuk ekonomi datar.",
+  "enable_grading": true,
+  "rendemen_baseline_pct": 22.0,
+  "rendemen_price_sensitivity": 1.5,
+
+  "rounding_seed_price_rp": 1,
+
+  "_fase2_budidaya": "Parameter mekanik budidaya. Angka gameplay (ganti bila ada data).",
+  "tank_capacity_l": 15,
+  "weed_growth_per_day": 0.012,
+  "health_decay_weed_factor": 0.25,
+  "health_decay_fertilizer_per_day": 0.0015,
+  "spray_base_effectiveness": 0.80,
+  "spray_health_recovery": 0.12,
+  "fertilize_health_recovery": 0.10,
+
+  "_harga_pupuk": "Harga pupuk Rp/kg — PLACEHOLDER gameplay (T_Harga hanya berisi pestisida). Verifikasi sebelum rilis.",
+  "fertilizer_price_rp_per_kg": {
+    "Urea": 8000, "RPH": 4500, "MOP": 9500, "Kieserite": 6000,
+    "Dolomit": 2000, "NPK": 10000, "TSP": 9000, "default": 7000
+  },
+
+  "_cuaca": "Bobot cuaca harian + faktor efektivitas semprot.",
+  "weather_types": ["cerah", "mendung", "hujan"],
+  "weather_spray_factor": { "cerah": 1.0, "mendung": 0.85, "hujan": 0.45 },
+  "weather_weed_factor": { "cerah": 1.0, "mendung": 1.1, "hujan": 1.3 },
+  "weather_forecast_days_default": 1,
+
+  "_hama": "Mekanik hama/penyakit. appear_chance & damage = gameplay. Biaya obat per metode = PLACEHOLDER (data dosis hama masih needs_review).",
+  "pest_level_growth_per_day": 0.02,
+  "pest_damage_per_day": 0.012,
+  "pest_base_effectiveness": 0.85,
+  "pest_inspection_cost_rp": 50000,
+  "pest_clear_threshold": 0.08,
+  "pest_treatment_cost_rp_per_ha": {
+    "Spraying": 450000, "Rat baiting": 250000, "Sanitasi": 150000, "Pengusiran": 100000, "default": 400000
+  },
+
+  "_fase4_tenaga_kerja": "Model HK (hari kerja). norma ha/HK & upah = PLACEHOLDER gameplay (norma HK banyak yang tak ada di workbook — lihat GDD 3.1). Buff Arman mengurangi HK (kerja lebih cepat).",
+  "daily_wage_rp": 120000,
+  "ha_per_hk": { "pupuk": 2.0, "semprot": 2.0, "hama": 2.5, "panen": 1.0, "default": 2.0 },
+
+  "_fase4_pasar": "Penjualan TBS. Pengepul = harga flat lebih rendah, tanpa transport/sortasi. Pabrik = harga dasar penuh x rendemen x grade(kualitas) dikurangi transport.",
+  "pengepul_price_factor": 0.85,
+  "pabrik_grade_base": 0.90,
+  "transport_cost_rp_per_kg": 150,
+
+  "_pasar_lahan": "Pembukaan lahan hutan (abstracted): biaya + waktu sebelum bisa ditanami.",
+  "clearing_cost_rp": 3500000,
+  "clearing_days": 30,
+
+  "_pembibitan": "Tahapan sesuai dokumen 'Tahapan Proses membuka pembibitan sampai bibit siap tanam': pesan kecambah 1 bln -> seleksi kecambah -> Pre Nursery -> siapkan MN (2 bln) -> transplanting+seleksi PN (3 bln/3 daun) -> seleksi MN 6 & 9 bln -> siap umur 12 bln (seleksi final). Seleksi 2% per titik. Biaya = PLACEHOLDER gameplay.",
+  "nursery": {
+    "order_days": 30,
+    "prep_pn_cost_rp": 1500000,
+    "prep_mn_cost_rp": 2000000,
+    "pn_to_mn_month": 3,
+    "mn_prep_due_month": 2,
+    "selection_rate": 0.02,
+    "selection_points_mn": [6, 9],
+    "ready_month": 12,
+    "maintenance_rp_per_100_per_month": 50000,
+    "bibit_sell_price_rp": 35000,
+    "bibit_price_factor": 4.0
+  }
+}

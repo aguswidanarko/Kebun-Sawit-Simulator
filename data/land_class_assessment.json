@@ -1,0 +1,29 @@
+{
+  "_catatan": "Kriteria penilaian kelas kesesuaian lahan — diambil dari aplikasi 'penilaian-kelas-lahan' (valuasi-kebun-sawit, standar PPKS). Kelas akhir = faktor yang PALING BERAT. Faktor pupuk: rekomendasi kelas S1 sebagai basis; S2 +5%, S3 +10%.",
+  "lereng_pct": [8, 15],
+  "gambut_dalam_m": 3,
+  "fert_factor": { "S1": 1.0, "S2": 1.05, "S3": 1.1 },
+  "air_labels": {
+    "normal": ["Air normal", "S1"],
+    "rawa": ["Rawa terdrainase", "S2"],
+    "kering": ["Lahan kering", "S2"],
+    "tergenang": ["Rawa tergenang", "S3"]
+  },
+  "kelas_desc": {
+    "S1": "Sangat sesuai — tanpa pembatas berarti",
+    "S2": "Cukup sesuai — ada pembatas ringan",
+    "S3": "Sesuai marginal — pembatas berat, hasil lebih rendah"
+  },
+  "klasifikasi": [
+    { "k": "A", "lo": 1.05, "label": "Di atas standar", "desc": "Produksi melebihi standar kelas lahannya." },
+    { "k": "B", "lo": 0.95, "label": "Sesuai standar", "desc": "Dalam rentang standar kelas lahannya." },
+    { "k": "C", "lo": 0.85, "label": "Sedikit di bawah standar", "desc": "Setara turun satu kelas lahan." },
+    { "k": "D", "lo": 0.7, "label": "Di bawah standar", "desc": "Setara turun dua kelas lahan." },
+    { "k": "E", "lo": 0.0, "label": "Jauh di bawah standar", "desc": "Gap lebih dari 30% dari standar." }
+  ],
+  "default_assess": {
+    "S1": { "lereng": 3.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" },
+    "S2": { "lereng": 10.0, "tanah": "mineral", "gambut_m": 0.0, "air": "normal" },
+    "S3": { "lereng": 2.0, "tanah": "gambut", "gambut_m": 3.5, "air": "tergenang" }
+  }
+}

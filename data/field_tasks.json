@@ -1,0 +1,148 @@
+{
+  "_catatan": "Mini-game simulator lapangan. mech: hold | timing | targets. zone = rentang 0..1 yang dihitung \"Tepat\". at = posisi titik tugas di peta mini blok (0..1). hk_delegate = HK bila ditugaskan ke tim (dibagi speed profil). Bintang: hold/timing -> hits/rounds >=0.8 => 3, >=0.5 => 2, else 1; targets -> akurasi (hits-misses)/valid >=0.99 & <25 dtk => 3, >=0.6 => 2, else 1. Tim = selalu 2 bintang.",
+  "tasks": [
+    {
+      "id": "semprot",
+      "name": "Semprot gulma",
+      "verb": "Semprot",
+      "mech": "hold",
+      "rounds": 5,
+      "zone": [
+        0.6,
+        0.8
+      ],
+      "at": [
+        0.24,
+        0.34
+      ],
+      "help": "Tahan tombol untuk menyemprot satu piringan. Lepas saat dosis masuk zona. Tangki 15 L.",
+      "worker": "Siti · Penyemprot",
+      "hk_delegate": 0.5
+    },
+    {
+      "id": "pupuk",
+      "name": "Pupuk per pokok",
+      "verb": "Tabur",
+      "mech": "timing",
+      "rounds": 5,
+      "zone": [
+        0.42,
+        0.6
+      ],
+      "speed": 0.024,
+      "at": [
+        0.28,
+        0.7
+      ],
+      "help": "Tap saat jarum takaran di zona 2 kg/pokok.",
+      "worker": "Udin · Pemupuk",
+      "hk_delegate": 0.5
+    },
+    {
+      "id": "panen",
+      "name": "Panen TBS (egrek)",
+      "verb": "Potong",
+      "mech": "timing",
+      "rounds": 5,
+      "zone": [
+        0.62,
+        0.74
+      ],
+      "speed": 0.032,
+      "at": [
+        0.74,
+        0.26
+      ],
+      "help": "Tap saat egrek tepat di tangkai tandan matang.",
+      "worker": "Joko · Pemanen",
+      "hk_delegate": 1
+    },
+    {
+      "id": "angkut",
+      "name": "Angkut ke TPH",
+      "verb": "Angkut",
+      "mech": "targets",
+      "at": [
+        0.5,
+        0.94
+      ],
+      "help": "Muat semua TBS matang & brondolan ke angkong. Jangan muat tandan mentah.",
+      "worker": "Rudi · Pengangkut",
+      "hk_delegate": 0.5
+    },
+    {
+      "id": "inspeksi",
+      "name": "Inspeksi hama",
+      "verb": "Periksa",
+      "mech": "targets",
+      "at": [
+        0.76,
+        0.62
+      ],
+      "help": "Baca kondisi tiap pokok. Tap hanya pokok yang menunjukkan gejala.",
+      "worker": "Mandor Hasan",
+      "hk_delegate": 0.25
+    },
+    {
+      "id": "tanam",
+      "name": "Tanam kecambah",
+      "verb": "Tanam",
+      "mech": "targets",
+      "at": [
+        0.5,
+        0.5
+      ],
+      "help": "Tap setiap ajir (titik tanam). Hindari batu, genangan, tunggul.",
+      "worker": "Udin · Penanam",
+      "hk_delegate": 1
+    },
+    {
+      "id": "buka",
+      "name": "Pembukaan lahan",
+      "verb": "Tebas",
+      "mech": "hold",
+      "rounds": 4,
+      "zone": [
+        0.7,
+        0.88
+      ],
+      "at": [
+        0.5,
+        0.5
+      ],
+      "help": "Tahan untuk menebas. Lepas di zona sebelum mesin terlalu panas.",
+      "worker": "Tim tebas (3 orang)",
+      "hk_delegate": 2
+    }
+  ],
+  "inspection_symptoms": {
+    "ulat_api": [
+      "Daun berlubang",
+      "Pelepah menggundul",
+      "Ulat di anak daun"
+    ],
+    "tikus": [
+      "Pelepah terkerat",
+      "Buah muda digerogoti",
+      "Jejak di piringan"
+    ],
+    "ganoderma": [
+      "Jamur di pangkal batang",
+      "Pelepah bawah kering",
+      "Daun tombak tak membuka"
+    ]
+  },
+  "inspection_normal_labels": [
+    "Pelepah sehat",
+    "Daun hijau rata",
+    "Pelepah tua (wajar)",
+    "Buah normal",
+    "Piringan bersih",
+    "Batang kokoh",
+    "Tandan berkembang",
+    "Daun mengilap",
+    "Bunga jantan (wajar)",
+    "Pelepah segar",
+    "Tajuk rapat"
+  ]
+}
