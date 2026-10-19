@@ -78,11 +78,12 @@ func _build_block(block: Dictionary) -> void:
 	var health := float(block.get("health", 1.0))
 	var golden := int(block.get("golden_count", 0))
 	var scale_s: float = lerp(0.82, 1.0, health)   # isyarat visual kesehatan buruk = lebih kecil
+	var sha := float(Database.get_seed(String(block.get("seed_id", ""))).get("start_harvest_age_year", 4))
 
 	var idx := 0
 	for r in ROWS:
 		for c in COLS:
-			var palm := PalmBuilder.build_for_age(float(age))
+			var palm := PalmBuilder.build_for_age(float(age), sha)
 			palm.position = Vector3(c * SPACING, 0, r * SPACING)
 			palm.scale = Vector3(scale_s, scale_s, scale_s)
 			palm.rotate_y(randf() * TAU)

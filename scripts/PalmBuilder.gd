@@ -49,24 +49,31 @@ static func build_asset_stage(path: String) -> Node3D:
 
 ## Pilih aset dedicated sesuai umur pokok lapangan (tahun) — dipakai scene yang
 ## merender kebun existing dari umur bebas (bukan siklus eksplisit RantaiPascapanen).
-## Rentang sinkron dgn deskripsi tiap aset (lihat komentar const ASSET_* di atas).
-static func asset_for_age(age_years: float) -> String:
-	if age_years < 1.0:
+## `start_harvest_age` = umur mulai panen varietas blok ini (seed.start_harvest_age_year,
+## 3 atau 4 th tergantung varietas — lihat seed_catalog.json). Tahap TBM1/TBM2/TBM3
+## diskalakan PROPORSIONAL thd umur ini (bukan patokan tetap age<4) supaya batas
+## "mulai terlihat TM" selalu PAS dgn umur varietas itu benar-benar mulai berbuah —
+## kalau tidak, varietas cepat panen (Damimas/FR/Topaz, start_harvest_age_year=3)
+## akan masih tampil TBM3 padahal Agronomy.tbs_batch_kg() sudah menghasilkan TBS
+## matang di umur 3 th (penanda panen muncul di pokok yg tampilannya belum TM).
+static func asset_for_age(age_years: float, start_harvest_age: float = 4.0) -> String:
+	var sha := maxf(start_harvest_age, 1.0)
+	if age_years < sha * 0.33:
 		return ASSET_TBM1
-	elif age_years < 2.0:
+	elif age_years < sha * 0.67:
 		return ASSET_TBM2
-	elif age_years < 4.0:
+	elif age_years < sha:
 		return ASSET_TBM3
-	elif age_years < 8.0:
+	elif age_years < sha + 4.0:
 		return ASSET_TM1
-	elif age_years < 13.0:
+	elif age_years < sha + 9.0:
 		return ASSET_TM_REMAJA
 	else:
 		return ASSET_TM_TUA
 
 ## Instance langsung aset dedicated sesuai umur (lihat asset_for_age).
-static func build_for_age(age_years: float) -> Node3D:
-	return build_asset_stage(asset_for_age(age_years))
+static func build_for_age(age_years: float, start_harvest_age: float = 4.0) -> Node3D:
+	return build_asset_stage(asset_for_age(age_years, start_harvest_age))
 
 ## Tinggi (m) model dedicated, dipakai utk framing kamera / tinggi pohon hero
 ## (mis. skala galah egrek saat animasi panen). Di-cache per path.
