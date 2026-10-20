@@ -10,7 +10,7 @@ var _gone := false
 func _ready() -> void:
 	# Headless (CI / build) → langsung skip ke menu
 	if DisplayServer.get_name() == "headless":
-		_go(); return
+		call_deferred("_go"); return
 
 	# Background hitam agar tak ada flash putih
 	var bg := ColorRect.new()

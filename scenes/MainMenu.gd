@@ -68,6 +68,10 @@ func _ready() -> void:
 	_build_ui()
 	if a.has("shotmenu"):
 		call_deferred("_capture")
+	elif a.has("shotmenu1"):
+		_slide = 1; _refresh_slides(); call_deferred("_capture")
+	elif a.has("shotmenu2"):
+		_slide = 2; _refresh_slides(); call_deferred("_capture")
 
 func _capture() -> void:
 	await get_tree().create_timer(1.3).timeout
