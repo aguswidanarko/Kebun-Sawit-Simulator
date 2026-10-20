@@ -169,6 +169,7 @@ func _harvest_all() -> void:
 		var price := Actions._price(seed, float(p.get("health", 1.0)), _buyer)
 		var net := int(kg * price) - Agronomy.labor_cost("panen", float(p.get("area_ha", 1.0)))
 		p["last_harvest_day"] = GameState.day
+		p["harvest_bonus_available"] = true   # sisa 10% bisa diambil manual di mode lapangan
 		total += max(0, net)
 	if total > 0:
 		GameState.earn(total, "Panen TBS → %s" % _buyer.capitalize())

@@ -9,15 +9,22 @@ signal log_message(text: String)
 signal blocks_changed()
 signal objective_changed(key: String)
 signal cosmetics_changed()
+signal spend_failed(amount: int)       # dipakai SoundManager utk bunyi "error" (dana tak cukup)
+signal pest_appeared(block_id: String) # dipakai SoundManager utk bunyi "alert" (gejala hama baru)
+signal break_even_achieved(days_taken: int, rank: int)  # dipicu saat pertama kali cash >= 100M
 
 const SAVE_PATH := "user://savegame.json"
 const SHARE_PATH := "user://kebun_share.json"
+const HALL_OF_FAME_PATH := "user://hall_of_fame.json"
+const HALL_OF_FAME_CAP := 20   # simpan 20 rekor profit tertinggi saja
 
 var cash: int = 0
 var day: int = 1
 var profile_id: String = "pekerja_aktif"
 var weather: String = "cerah"
 var blocks: Array = []  # tiap blok = Dictionary (lihat new_block())
+var break_even_day: int = -1  # hari saat pertama kali mencapai 100M (dari gameplay, bukan IAP)
+var _break_even_shown: bool = false  # flag untuk memastikan prompt hanya ditampilkan sekali
 
 # Misi awal / tutorial (action-based, menggantikan "7 hari pertama").
 var objectives: Dictionary = _fresh_objectives()
@@ -29,6 +36,8 @@ func _fresh_objectives() -> Dictionary:
 var kebun_name: String = "Kebun Saya"
 var cosmetics_owned: Array = []        # id yang dimiliki
 var cosmetics_applied: Dictionary = {} # kategori -> id yang dipakai
+# --- IAP (uang sungguhan, lihat PurchaseManager) ---
+var purchase_history: Array = []       # [{product_id, sandbox, day, grant_rp}, ...] — riwayat/nota
 # --- Kunjungan (multiplayer asinkron) ---
 var visiting: Dictionary = {}          # snapshot kebun yang sedang dikunjungi (kosong = main sendiri)
 # --- Alur cerita / run-state ---
@@ -128,10 +137,16 @@ func _plant(i: int, seed_id: String) -> bool:
 	if i < 0 or i >= plots.size():
 		return false
 	var seed := Database.get_seed(seed_id)
-	var lc := String(plots[i].get("land_class", land_class))
+	var prev: Dictionary = plots[i]
+	var lc := String(prev.get("land_class", land_class))
 	var b := new_block(1.0, seed_id, lc)
 	b["state"] = "tanam"
 	b["id"] = "B%d" % (i + 1)
+	# Lanjutkan modal lahan (dipakai sell_land) & penilaian lahan dari plot sebelumnya.
+	if prev.has("land_cost_rp"):
+		b["land_cost_rp"] = prev["land_cost_rp"]
+	if prev.has("assess"):
+		b["assess"] = prev["assess"]
 	# Golden Tree di-roll saat tanam (hanya benih bersertifikat).
 	var golden := 0
 	if seed.get("golden_eligible", false):
@@ -224,6 +239,17 @@ func prepare_mn() -> String:
 	emit_signal("blocks_changed")
 	return "Main Nursery siap — transplanting otomatis saat bibit umur 3 bulan (3 daun)."
 
+## Harga jual 1 bibit siap tanam dari bibitan sendiri: 120% modal (bibit TANPA
+## sertifikat — profit 20%) atau 160% modal (bibit BERSERTIFIKAT — profit 60%).
+## Modal = harga kecambah/batang (price_per_seed_rp) varietas bibitan yg berjalan.
+func bibit_sell_price() -> int:
+	if nursery.is_empty():
+		return 0
+	var seed := Database.get_seed(String(nursery.get("seed_id", "")))
+	var modal := int(seed.get("price_per_seed_rp", 0))
+	var margin := 1.6 if String(seed.get("certification_status", "")) == "certified" else 1.2
+	return int(round(modal * margin))
+
 ## Jual bibit siap tanam ke pelanggan.
 func sell_bibit(qty: int) -> String:
 	if String(nursery.get("stage", "")) != "siap":
@@ -231,7 +257,7 @@ func sell_bibit(qty: int) -> String:
 	qty = min(qty, int(nursery.get("qty", 0)))
 	if qty <= 0:
 		return "Jumlah tidak valid."
-	var price := int(npar().get("bibit_sell_price_rp", 35000))
+	var price := bibit_sell_price()
 	earn(price * qty, "Jual %d bibit siap tanam" % qty)
 	nursery["qty"] = int(nursery["qty"]) - qty
 	var msg := "Terjual %d bibit @ Rp%s = Rp%s." % [qty, _fmt(price), _fmt(price * qty)]
@@ -303,6 +329,7 @@ func tick_nursery() -> void:
 
 func _ready() -> void:
 	cash = int(Database.params.get("base_capital_rp", 100000000))
+	cash_changed.connect(func(_c): maybe_record_hall_of_fame())
 
 func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
@@ -326,6 +353,7 @@ func start_new_game(pid: String) -> void:
 	ledger = []
 	nursery = {}
 	tph = {}
+	break_even_day = -1
 
 var buy_target_plot: int = 0         # slot yang sedang dibeli di Pasar Lahan
 # --- Pedagang: gudang (inv) + harga harian ---
@@ -422,21 +450,62 @@ func buy_land(offer_id: String, idx: int) -> String:
 	var clearing := int(Database.params.get("clearing_cost_rp", 0)) if bool(lo.get("needs_clearing", false)) else 0
 	if not spend(price + clearing, "Beli lahan %s" % lo.get("name", "?")):
 		return "Dana tidak cukup (butuh Rp%s)." % _fmt(price + clearing)
-	_fill_plot_from_land(idx, lo)
+	_fill_plot_from_land(idx, lo, price + clearing)
 	emit_signal("blocks_changed")
 	return "%s dibeli untuk %s." % [lo.get("name", "Lahan"), plots[idx].get("id")]
 
-func _fill_plot_from_land(idx: int, lo: Dictionary) -> void:
+func _fill_plot_from_land(idx: int, lo: Dictionary, cost_rp: int) -> void:
 	var lc := String(lo.get("land_class", "S1"))
 	var id := "B%d" % (idx + 1)
 	if bool(lo.get("needs_clearing", false)):
 		var d := int(Database.params.get("clearing_days", 30))
-		plots[idx] = { "id": id, "state": "buka", "land_class": lc, "clear": d, "clear0": d }
+		plots[idx] = { "id": id, "state": "buka", "land_class": lc, "clear": d, "clear0": d, "land_cost_rp": cost_rp }
 	else:
-		plots[idx] = { "id": id, "state": "siap", "land_class": lc }
+		plots[idx] = { "id": id, "state": "siap", "land_class": lc, "land_cost_rp": cost_rp }
 	# Atribut penilaian kelas lahan (lereng/tanah/air) ikut tersimpan di plot.
 	if lo.has("assess"):
 		plots[idx]["assess"] = (lo.get("assess") as Dictionary).duplicate()
+
+# ---------------------------------------------------------------- Jual lahan (pedagang)
+## Modal lahan suatu plot: harga beli asli (+ pembukaan bila hutan) kalau tercatat,
+## kalau tidak (lahan demo awal/save lama) pakai perkiraan per kelas lahan.
+func land_cost_of(p: Dictionary) -> int:
+	if p.has("land_cost_rp"):
+		return int(p["land_cost_rp"])
+	var dflt := { "S1": 42000000, "S2": 34000000, "S3": 15000000 }
+	return int(dflt.get(String(p.get("land_class", "S1")), 30000000))
+
+## Harga beli pedagang: 80% modal (lahan sawit biasa) — KECUALI ada Golden Tree,
+## pedagang bayar di atas 100% modal: tiap 1 pokok golden = +1% (5 pokok -> 105%,
+## 120 pokok -> 220%).
+func land_sale_price(idx: int) -> int:
+	if idx < 0 or idx >= plots.size():
+		return 0
+	var p: Dictionary = plots[idx]
+	if String(p.get("state", "kosong")) == "kosong":
+		return 0
+	var modal := land_cost_of(p)
+	var golden := int(p.get("golden_count", 0))
+	var factor := (1.0 + golden * 0.01) if golden > 0 else 0.80
+	return int(round(modal * factor))
+
+## Jual lahan yang dikelola (plot apa pun selain "kosong") ke pedagang. Plot
+## kembali kosong setelahnya — bisa dibeli lagi dari Pasar Lahan.
+func sell_land(idx: int) -> String:
+	if idx < 0 or idx >= plots.size():
+		return "Slot tidak valid."
+	var p: Dictionary = plots[idx]
+	var id := String(p.get("id", "B%d" % (idx + 1)))
+	if String(p.get("state", "kosong")) == "kosong":
+		return "%s belum dimiliki — tidak ada yang bisa dijual." % id
+	var price := land_sale_price(idx)
+	var golden := int(p.get("golden_count", 0))
+	earn(price, "Jual lahan %s ke pedagang" % id)
+	plots[idx] = { "id": id, "state": "kosong" }
+	var note := " (bonus %d Golden Tree)" % golden if golden > 0 else ""
+	log_msg("%s terjual ke pedagang seharga Rp%s%s." % [id, _fmt(price), note])
+	emit_signal("blocks_changed")
+	return "%s terjual ke pedagang — Rp%s." % [id, _fmt(price)]
 
 ## Atribut penilaian sebuah plot; fallback profil tipikal per kelas bila tidak ada.
 func plot_assessment(p: Dictionary) -> Dictionary:
@@ -474,7 +543,7 @@ func apply_story(flags: Dictionary) -> void:
 	if lo.is_empty():
 		lo = { "land_class": land_class, "needs_clearing": bool(flags.get("needs_clearing", false)) }
 	if not plots.is_empty():
-		_fill_plot_from_land(0, lo)
+		_fill_plot_from_land(0, lo, price)
 	emit_signal("blocks_changed")
 	log_msg("Lahan: %s (kelas %s)%s. Sisa modal Rp%s." % [
 		flags.get("lahan_name", "-"), land_class,
@@ -514,6 +583,108 @@ func apply_cosmetic(id: String) -> void:
 		return
 	cosmetics_applied[String(c.get("category"))] = id
 	emit_signal("cosmetics_changed")
+
+# ---- IAP (lihat PurchaseManager — uang sungguhan, beda dari kosmetik) ----
+func record_purchase(product_id: String, sandbox: bool) -> void:
+	purchase_history.append({
+		"product_id": product_id, "sandbox": sandbox, "day": day,
+		"grant_rp": PurchaseManager.PRODUCT_GRANT_RP,
+	})
+	# (rekor Hall of Fame otomatis lewat cash_changed -> maybe_record_hall_of_fame, lihat _ready())
+
+# ---- Hall of Fame (rekor profit tertinggi, lokal — lihat LeaderboardManager
+# utk status online/offline) ----
+## Profit bersih "all-time": saldo sekarang dikurangi modal awal. Dipakai sbg
+## skor Hall of Fame krn `ledger` tidak 100% rekonsil (lihat apply_story()).
+func current_profit() -> int:
+	return cash - int(Database.params.get("base_capital_rp", 100000000))
+
+## Hitung jumlah plot yang dimiliki (state != kosong).
+func plots_owned() -> int:
+	var count := 0
+	for p in plots:
+		if String(p.get("state", "kosong")) != "kosong":
+			count += 1
+	return count
+
+## Formula ranking Hall of Fame: kombinasi 3 parameter.
+## Semakin cepat break-even, semakin tinggi profit, semakin banyak plot, semakin tinggi score.
+func calculate_hof_score(entry: Dictionary) -> float:
+	var profit := float(entry.get("profit", 0))
+	var break_even_days := float(entry.get("break_even_day", 999999))
+	var plots_cnt := float(entry.get("plots_owned", 0))
+
+	# Normalisasi parameter (biar scorenya balanced):
+	# Days factor: lebih cepat = lebih baik (invert & scale)
+	var days_factor := maxf(1.0 - (break_even_days / 1000.0), 0.0)
+
+	# Profit factor: profit positif = baik
+	var profit_factor := maxf(profit / 1000000000.0, 0.0)  # normalisasi per 1 miliar
+
+	# Plots factor: max 9 plots
+	var plots_factor := minf(plots_cnt / 9.0, 1.0)
+
+	# Weighted score: 40% days, 40% profit, 20% plots
+	return days_factor * 0.4 + profit_factor * 0.4 + plots_factor * 0.2
+
+## Dipanggil saat cash_changed — cek break-even & update Hall of Fame.
+func maybe_record_hall_of_fame() -> void:
+	var profit := current_profit()
+	var base_capital := int(Database.params.get("base_capital_rp", 100000000))
+
+	# Cek break-even pertama kali (100M+)
+	var should_emit_breakeven := false
+	if break_even_day < 0 and cash >= base_capital:
+		break_even_day = day
+		should_emit_breakeven = true
+
+	var entries := hall_of_fame_entries()
+
+	# Cek apakah sudah ada entry dengan kebun_name ini (update existing)
+	var existing_idx := -1
+	for i in entries.size():
+		if entries[i].get("kebun_name") == display_kebun_name():
+			existing_idx = i
+			break
+
+	var entry := {
+		"kebun_name": display_kebun_name(), "profile_id": profile_id,
+		"profit": profit, "day": day, "break_even_day": break_even_day,
+		"plots_owned": plots_owned(),
+	}
+
+	if existing_idx >= 0:
+		entries[existing_idx] = entry
+	else:
+		entries.append(entry)
+
+	# Sort by ranking formula
+	entries.sort_custom(func(a, b):
+		var score_a := calculate_hof_score(a)
+		var score_b := calculate_hof_score(b)
+		return score_a > score_b)
+	entries = entries.slice(0, HALL_OF_FAME_CAP)
+
+	var f := FileAccess.open(HALL_OF_FAME_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(entries, "\t"))
+		f.close()
+
+	# Emit break_even_achieved dengan rank yang benar (setelah sort & save)
+	if should_emit_breakeven and not _break_even_shown:
+		_break_even_shown = true
+		for i in entries.size():
+			if entries[i].get("kebun_name") == display_kebun_name():
+				emit_signal("break_even_achieved", break_even_day, i + 1)
+				break
+
+	LeaderboardManager.submit_score(profit)
+
+func hall_of_fame_entries() -> Array:
+	if not FileAccess.file_exists(HALL_OF_FAME_PATH):
+		return []
+	var data = JSON.parse_string(FileAccess.get_file_as_string(HALL_OF_FAME_PATH))
+	return data if data is Array else []
 
 func character_model() -> String:
 	var c := Database.get_cosmetic(String(cosmetics_applied.get("kostum", "")))
@@ -594,6 +765,7 @@ var ledger: Array = []
 func spend(amount: int, note := "") -> bool:
 	if amount > cash:
 		log_msg("Dana tidak cukup. Butuh Rp%s, saldo Rp%s." % [_fmt(amount), _fmt(cash)])
+		emit_signal("spend_failed", amount)
 		return false
 	cash -= amount
 	if amount != 0:
@@ -617,6 +789,7 @@ func new_block(area_ha: float, seed_id: String, land_class: String) -> Dictionar
 		"planting_day": day,
 		"last_harvest_day": day,
 		"last_fertilize_day": day,
+		"fertilize_history": [],
 		"weed_level": 0.0,
 		"pest": null,
 		"health": 1.0
@@ -638,7 +811,8 @@ func save_game() -> void:
 		"kebun_name": kebun_name, "cosmetics_owned": cosmetics_owned,
 		"cosmetics_applied": cosmetics_applied,
 		"story_flags": story_flags, "land_acquired": land_acquired, "land_class": land_class,
-		"plots": plots, "inv": inv, "ledger": ledger, "nursery": nursery, "tph": tph
+		"plots": plots, "inv": inv, "ledger": ledger, "nursery": nursery, "tph": tph,
+		"purchase_history": purchase_history, "break_even_day": break_even_day,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
@@ -678,10 +852,14 @@ func load_game() -> bool:
 	inv = iv2 if iv2 is Array else _seed_inv()
 	var lg = data.get("ledger", [])
 	ledger = lg if lg is Array else []
+	var ph = data.get("purchase_history", [])
+	purchase_history = ph if ph is Array else []
 	var nr = data.get("nursery", {})
 	nursery = nr if nr is Dictionary else {}
 	var tp = data.get("tph", {})
 	tph = tp if tp is Dictionary else {}
+	break_even_day = int(data.get("break_even_day", -1))
+	_break_even_shown = (break_even_day >= 0)
 	visiting = {}
 	emit_signal("cosmetics_changed")
 	emit_signal("cash_changed", cash)

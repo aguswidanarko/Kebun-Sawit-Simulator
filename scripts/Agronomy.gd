@@ -62,8 +62,23 @@ static func spray_plan(block: Dictionary, location: String, organism: String) ->
 # ---------------------------------------------------------------- Efek ke blok
 static func apply_fertilize(block: Dictionary) -> void:
 	block["last_fertilize_day"] = GameState.day
+	var hist: Array = block.get("fertilize_history", [])
+	hist.append(GameState.day)
+	block["fertilize_history"] = hist
 	var rec := float(Database.params.get("fertilize_health_recovery", 0.10))
 	block["health"] = min(1.0, float(block.get("health", 1.0)) + rec)
+
+## Berapa kali blok ini dipupuk dlm 365 hari terakhir (window bergulir, bukan
+## tahun kalender tetap — dipakai utk batas bawah produksi TM, lihat tbs_batch_kg).
+static func fertilize_count_last_year(block: Dictionary) -> int:
+	var hist: Array = block.get("fertilize_history", [])
+	var dpy := float(Database.params.get("days_per_year", 365))
+	var cutoff := GameState.day - int(dpy)
+	var n := 0
+	for d in hist:
+		if int(d) > cutoff:
+			n += 1
+	return n
 
 static func apply_spray(block: Dictionary, effectiveness: float) -> void:
 	block["weed_level"] = clamp(float(block.get("weed_level", 0.0)) * (1.0 - effectiveness), 0.0, 1.0)
@@ -101,6 +116,7 @@ static func _maybe_spawn(block: Dictionary, age: int) -> void:
 			block["pest"] = { "id": cat.get("id"), "level": 0.12, "diagnosed": false }
 			GameState.log_msg("⚠ %s: gejala muncul — \"%s\" (perlu INSPEKSI utk diagnosis)." % [
 				block.get("id"), cat.get("symptom", "?")])
+			GameState.emit_signal("pest_appeared", String(block.get("id", "")))
 			return
 
 static func pest_treatment_plan(block: Dictionary) -> Dictionary:
@@ -170,6 +186,9 @@ static func _tolerance_factor(block: Dictionary, cat: Dictionary) -> float:
 ## Plafon varietas (seed.max_tbs_ton_ha_year) tetap membatasi pokok NORMAL;
 ## pokok Golden Tree dapat bonus DI ATAS plafon = count x kg/pkok normal x
 ## (golden_multiplier - 1) — kebijakan sama dgn Main.gd lama (temuan audit D/E).
+## Hasil akhir dijepit ke BATAS BAWAH (floor) sesuai rajin pupuk 365 hari
+## terakhir (fertilize_count_last_year) — 12/18/24 t/ha/thn utk 0/1/>=2x pupuk
+## — supaya TM tak pernah jatuh ke 0 walau health/gulma/hama terburuk sekalipun.
 static func tbs_batch_kg(block: Dictionary) -> float:
 	var seed := Database.get_seed(String(block.get("seed_id", "")))
 	var age := GameState.age_years_of(block)
@@ -200,6 +219,21 @@ static func tbs_batch_kg(block: Dictionary) -> float:
 	if golden > 0.0 and bool(Database.params.get("golden_bonus_exceeds_variety_cap", true)):
 		var mult := float(Database.params.get("golden_multiplier", 5))
 		kg += golden * (kg_per_palm_rotation * health) * (mult - 1.0)
+
+	# Batas bawah produksi TM — seburuk apapun kesehatan/gulma/hama, TM tak
+	# pernah produksi nol (spek): 1 ton/ha/bulan (12 t/ha/thn) kalau tak dirawat
+	# sama sekali, naik ke 1,5 t/ha/bln (18 t/ha/thn) kalau dipupuk 1x dlm 365
+	# hari terakhir, 2 t/ha/bln (24 t/ha/thn) kalau dipupuk >=2x. Ini floor, BUKAN
+	# tambahan di atas produksi normal — tanaman sehat & terawat lengkap (gulma +
+	# hama) hasilnya tetap sesuai standar produksi di atas (floor tak berlaku).
+	var fert_n := fertilize_count_last_year(block)
+	var floor_ton_ha_year := 12.0
+	if fert_n >= 2:
+		floor_ton_ha_year = 24.0
+	elif fert_n == 1:
+		floor_ton_ha_year = 18.0
+	var floor_kg := floor_ton_ha_year * 1000.0 * area * (rotation_days / dpy)
+	kg = max(kg, floor_kg)
 	return kg
 
 # ---------------------------------------------------------------- Tenaga kerja (HK)

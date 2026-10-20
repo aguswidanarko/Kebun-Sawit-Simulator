@@ -114,7 +114,9 @@ static func margin(l := 16, t := 0, r := 16, b := 0) -> MarginContainer:
 
 # ---------------------------------------------------------------- tombol
 ## kind: "primary" (fill aksen) | "secondary" (border divider) | "ghost" | "fill" (fill ink, utk terpilih)
-static func btn(text: String, cb: Callable, kind := "secondary", size := 14, min_h := 44) -> Button:
+## click_sfx: nama efek SoundManager yg diputar saat ditekan ("" utk bisu — dipakai
+## tombol yg sudah punya efek lain sendiri, mis. beli/panen yg bunyi lewat cash_changed).
+static func btn(text: String, cb: Callable, kind := "secondary", size := 14, min_h := 44, click_sfx := "click") -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(0, min_h)
@@ -148,19 +150,22 @@ static func btn(text: String, cb: Callable, kind := "secondary", size := 14, min
 			b.add_theme_color_override("font_hover_color", INK)
 			b.add_theme_color_override("font_pressed_color", INK)
 			b.add_theme_color_override("font_disabled_color", N500)
-	b.pressed.connect(cb)
+	b.pressed.connect(func():
+		if click_sfx != "":
+			SoundManager.play(click_sfx)
+		cb.call())
 	return b
 
 ## Tombol segmented (teks tengah).
 static func seg(text: String, selected: bool, cb: Callable) -> Button:
-	var b := btn(text, cb, "fill" if selected else "secondary", 13)
+	var b := btn(text, cb, "fill" if selected else "secondary", 13, 44, "toggle")
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return b
 
 ## Tombol tutup ghost 36×36 dengan ikon "x" (dipakai di header sheet/bottom-sheet).
 static func close_btn(cb: Callable) -> Button:
-	var b := btn("", cb, "ghost", 14, 36)
+	var b := btn("", cb, "ghost", 14, 36, "close")
 	b.custom_minimum_size = Vector2(36, 36)
 	var ic := icon("x", 18, INK)
 	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -381,6 +386,7 @@ static func tabbar(active: String) -> Control:
 
 # ---------------------------------------------------------------- toast
 static func toast(host: Node, txt: String) -> void:
+	SoundManager.notify()
 	var layer := CanvasLayer.new()
 	layer.layer = 90
 	host.add_child(layer)

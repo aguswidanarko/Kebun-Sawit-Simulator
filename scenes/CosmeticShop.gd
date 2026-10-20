@@ -122,5 +122,6 @@ func _item_row(item: Dictionary) -> HBoxContainer:
 	return row
 
 func _btn(text: String, cb: Callable) -> Button:
-	var b := Button.new(); b.text = text; b.pressed.connect(cb)
+	var b := Button.new(); b.text = text
+	b.pressed.connect(func(): SoundManager.click(); cb.call())
 	return b

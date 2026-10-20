@@ -82,7 +82,6 @@
     "selection_points_mn": [6, 9],
     "ready_month": 12,
     "maintenance_rp_per_100_per_month": 50000,
-    "bibit_sell_price_rp": 35000,
     "bibit_price_factor": 4.0
   }
 }

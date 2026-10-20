@@ -92,6 +92,7 @@ static func harvest(b: Dictionary, buyer := "pengepul") -> String:
 	var lab := Agronomy.labor_cost("panen", float(b.get("area_ha", 1.0)))
 	var net := gross - lab
 	b["last_harvest_day"] = GameState.day
+	b["harvest_bonus_available"] = true   # sisa 10% bisa diambil manual di mode lapangan
 	if net > 0:
 		GameState.earn(net)
 		GameState.mark_objective("harvested")

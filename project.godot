@@ -21,6 +21,9 @@ config/icon="res://icon.svg"
 Database="*res://autoload/Database.gd"
 GameState="*res://autoload/GameState.gd"
 TimeManager="*res://autoload/TimeManager.gd"
+SoundManager="*res://autoload/SoundManager.gd"
+PurchaseManager="*res://autoload/PurchaseManager.gd"
+LeaderboardManager="*res://autoload/LeaderboardManager.gd"
 
 [display]
 

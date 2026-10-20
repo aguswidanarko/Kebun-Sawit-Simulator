@@ -33,9 +33,11 @@ const LOOT_CHECK_INTERVAL := 2.0
 const BOUNDARY_MARGIN := 2.5       # jarak aman dari dinding hutan agar player tak klip ke batang
 
 # --- Simulasi panen SOP (potong -> brondolan -> TPH -> angkut) ---
-const RIPE_COUNT := 6          # pohon matang panen per rotasi (representatif)
+const RIPE_COUNT := 1          # 1 pin merah mewakili SELURUH hasil panen rotasi ini
 var _ripe: Array = []          # [{i, pos, cut, brondol, marker}]
-var _total_kg := 0.0           # estimasi TBS rotasi ini
+var _total_kg := 0.0           # estimasi TBS rotasi ini (sudah termasuk bonus/sisa panen manual)
+var _bonus_only := false       # true = cuma mengambil sisa 10% (panen otomatis sudah diambil)
+const HARVEST_MANUAL_BONUS := 0.10   # panen manual (mode lapangan) selalu +10% drpd panen otomatis
 var _kg_per_palm := 0.0
 var _brondol_per_palm := 0.0   # SOP: brondolan ~10% terhadap janjang
 var _carry_kg := 0.0           # buah di piringan yang sedang dibawa
@@ -170,7 +172,19 @@ func _setup_harvest_sim() -> void:
 	_truck_pos = _tph_pos + Vector3(-1.0, 0, 7.5)
 	_build_truck()
 	# Pohon matang panen (kriteria SOP: 2 brondolan/kg di piringan).
-	_total_kg = Actions.estimate_kg(_block)
+	# Panen manual selalu lebih tinggi drpd otomatis: kalau rotasi ini BELUM
+	# dipanen otomatis sama sekali -> dapat penuh + bonus 10%. Kalau SUDAH
+	# dipanen otomatis (lihat Actions.harvest/HarvestScreen) -> cuma sisa 10%
+	# yg belum terambil yang masih bisa dipetik di sini.
+	var base_kg := Agronomy.tbs_batch_kg(_block)
+	if TimeManager.harvest_due(_block):
+		_total_kg = base_kg * (1.0 + HARVEST_MANUAL_BONUS)
+		_bonus_only = false
+	elif bool(_block.get("harvest_bonus_available", false)):
+		_total_kg = base_kg * HARVEST_MANUAL_BONUS
+		_bonus_only = true
+	else:
+		_total_kg = 0.0
 	if _total_kg <= 0.0:
 		return
 	var tbs_share := _total_kg * 0.9
@@ -181,7 +195,11 @@ func _setup_harvest_sim() -> void:
 	for k in RIPE_COUNT:
 		var i := int(idxs[k])
 		var marker := _ripe_marker()
-		marker.position = _palm_pos[i] + Vector3(0, _palm_h * 0.72, 0)
+		# Pin di dekat PANGKAL batang (ground level), bukan di mahkota — supaya
+		# yang terlihat (dekat pokok) sama dgn radius aksi (dihitung dari X/Z
+		# posisi pohon, lihat _nearest_ripe()), tidak membingungkan krn kamera
+		# 3rd-person sudut miring.
+		marker.position = _palm_pos[i] + Vector3(0, 0.9, 0)
 		add_child(marker)
 		_ripe.append({ "i": i, "pos": _palm_pos[i], "cut": false, "brondol": false, "marker": marker })
 
@@ -287,20 +305,26 @@ func _build_forest_loot() -> void:
 	_ensure_forest_slots()
 	_refresh_forest_loot()
 
-## Sinkronkan node loot di dunia dengan state slot (muncul bila tersedia,
-## hilang bila baru saja dipungut/masih dalam masa cooldown 1 bulan).
+## Hanya 1 pin putih (loot) tampil sekaligus di dunia (spek: 2 pin/scene total).
+## MAX_SLOTS tetap dipakai di balik layar utk variasi & cooldown per slot —
+## begitu pin yg tampil dipungut (lihat _do_collect), tick berikutnya di sini
+## langsung memunculkan slot lain yg masih tersedia bulan ini (kalau ada).
 func _refresh_forest_loot() -> void:
 	_ensure_forest_slots()
 	var slots: Dictionary = _block["forest_slots"]
+	# Pin yg sedang tampil tiba-tiba masuk cooldown (jarang, tapi jaga-jaga)?
+	for shown_i in _loot_nodes.keys().duplicate():
+		var s: Dictionary = slots[str(shown_i)]
+		if int(s.get("cooldown_until", -1)) > GameState.day:
+			(_loot_nodes[shown_i] as Node3D).queue_free()
+			_loot_nodes.erase(shown_i)
+	if not _loot_nodes.is_empty():
+		return
 	for i in ForestLoot.MAX_SLOTS:
 		var s: Dictionary = slots[str(i)]
-		var available: bool = int(s.get("cooldown_until", -1)) <= GameState.day
-		var has_node := _loot_nodes.has(i)
-		if available and not has_node:
+		if int(s.get("cooldown_until", -1)) <= GameState.day:
 			_spawn_loot_node(i)
-		elif not available and has_node:
-			(_loot_nodes[i] as Node3D).queue_free()
-			_loot_nodes.erase(i)
+			return
 
 func _spawn_loot_node(i: int) -> void:
 	var mesh := ForestBeltBuilder.marker_mesh()
@@ -308,9 +332,14 @@ func _spawn_loot_node(i: int) -> void:
 		return
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
-	var mat := ForestBeltBuilder.marker_material()
-	if mat:
-		mi.material_override = mat
+	# Pin PUTIH (beda dgn pin merah panen) — override material asset, jgn ikut
+	# warna bawaannya, supaya selalu jelas ini "lokasi aksi item random".
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.95, 0.95, 0.93)
+	mat.emission_enabled = true
+	mat.emission = Color(0.92, 0.92, 0.88)
+	mat.emission_energy_multiplier = 0.7
+	mi.material_override = mat
 	mi.position = ForestLoot.slot_position(String(_block.get("id", "blok")), i, _world_center, _boundary_r)
 	add_child(mi)
 	_loot_nodes[i] = mi
@@ -354,9 +383,11 @@ func _do_cut(k: int) -> void:
 		# Buah MENTAH terlanjur dipotong -> denda (SOP 6.12.3), tidak dihitung.
 		r["brondol"] = true
 		(r["marker"] as Node3D).visible = false
+		SoundManager.error()
 		GameState.spend(50000, "Denda potong buah mentah (cap M)")
 		_act("❌ Grading: MENTAH (<2 brondolan/kg) — kena denda Rp50.000. SOP: periksa brondolan di piringan sebelum memotong!")
 		return
+	SoundManager.drop()
 	var grade := "MATANG" if roll < 0.85 else "TERLALU MATANG"
 	_carry_kg += _kg_per_palm
 	(r["marker"] as Node3D).visible = false
@@ -383,6 +414,7 @@ func _do_deposit() -> void:
 		GameState.tph_deposit(kg, String(_block.get("seed_id", "")), float(_block.get("health", 1.0)))
 		_act("+%.0f kg disusun di TPH (total %.0f kg)." % [kg, GameState.tph_kg()])
 	if _all_harvested():
+		_block["harvest_bonus_available"] = false
 		_show_toast("✅ Potong buah tuntas! SOP: angkut SEMUA buah ke PKS hari ini juga (Zero Restan). Pergi ke truk.")
 
 func _all_harvested() -> bool:
@@ -495,7 +527,7 @@ func _mk_btn(text: String, cb: Callable, icon_name := "") -> Button:
 		if ResourceLoader.exists(path):
 			b.icon = load(path)
 			b.add_theme_color_override("icon_normal_color", Color(1, 1, 1))
-	b.pressed.connect(cb)
+	b.pressed.connect(func(): SoundManager.click(); cb.call())
 	return b
 
 ## Isi panel aksi sesuai konteks posisi pemain (pohon matang / TPH / truk / pohon biasa).
@@ -562,7 +594,8 @@ func _update_status() -> void:
 		for r in _ripe:
 			if not bool(r["cut"]):
 				sisa += 1
-		panen_txt = "\n[color=#ffd080]Panen: %d pohon matang tersisa · bawa %.0f kg · TPH %.0f kg%s[/color]" % [
+		panen_txt = "\n[color=#ffd080]Panen%s: %d pohon matang tersisa · bawa %.0f kg · TPH %.0f kg%s[/color]" % [
+			" (sisa 10% panen otomatis)" if _bonus_only else " manual (+10% drpd otomatis)",
 			sisa, _carry_kg, GameState.tph_kg(),
 			("  ⚠ RESTAN %d hr" % GameState.tph_restan_days()) if GameState.tph_restan_days() > 0 else ""]
 	elif GameState.tph_kg() > 0.0:

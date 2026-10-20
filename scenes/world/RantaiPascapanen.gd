@@ -744,6 +744,7 @@ func _play_harvest(zone_idx: int, tool: String) -> void:
 	fall_tw.tween_property(tbs, "position", land_pos, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	fall_tw.parallel().tween_property(tbs, "rotation_degrees", Vector3(randf_range(-70, 70), randf() * 360, randf_range(-70, 70)), 0.7)
 	await fall_tw.finished
+	SoundManager.drop()
 
 	TBSBuilder.brondolan_burst(self, land_pos, 16)
 

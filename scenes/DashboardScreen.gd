@@ -24,6 +24,9 @@ func _ready() -> void:
 	GameState.day_changed.connect(func(_d): _refresh())
 	GameState.blocks_changed.connect(_refresh)
 	GameState.cosmetics_changed.connect(_refresh)
+	GameState.break_even_achieved.connect(_on_break_even)
+	# Cek apakah break-even sudah dicapai tapi belum ditampilkan (kalau player ada di scene lain saat break-even)
+	call_deferred("_check_pending_breakeven")
 	if OS.get_cmdline_user_args().has("shotdash"):
 		call_deferred("_capture_dash")
 
@@ -131,8 +134,10 @@ func _header() -> Control:
 	kname_label = UIKit.label("", 26, UIKit.BG, 800)
 	tl.add_child(kname_label)
 	top.add_child(tl)
-	top.add_child(_icon_btn("shirt", func(): UIKit.toast(self, "Kustomisasi karakter menyusul (fase berikutnya).")))
+	top.add_child(_icon_btn("shirt", func(): get_tree().change_scene_to_file("res://scenes/CharacterCustomization.tscn")))
 	top.add_child(_icon_btn("shopping-bag", func(): get_tree().change_scene_to_file("res://scenes/CosmeticShop.tscn")))
+	top.add_child(_icon_btn("star", func(): get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn")))
+	top.add_child(_icon_btn("shopping-basket", func(): get_tree().change_scene_to_file("res://scenes/IAPScreen.tscn")))
 	top.add_child(_icon_btn("menu", func():
 		GameState.save_game()
 		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")))
@@ -401,7 +406,7 @@ func _open_sell_sheet() -> void:
 	v.add_theme_constant_override("separation", 10)
 	sheet.add_child(v)
 	var qty := int(GameState.nursery.get("qty", 0))
-	var price := int(GameState.npar().get("bibit_sell_price_rp", 35000))
+	var price := GameState.bibit_sell_price()
 	var hr := HBoxContainer.new()
 	var hv := VBoxContainer.new()
 	hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -539,6 +544,7 @@ func _tbs_est(b: Dictionary) -> float:
 
 # ---------------------------------------------------------------- bottom sheet
 func _sheet_base() -> PanelContainer:
+	SoundManager.open_sheet()
 	if _sheet:
 		_sheet.queue_free()
 	_sheet = CanvasLayer.new()
@@ -565,6 +571,7 @@ func _open_sheet(i: int) -> void:
 	_render_sheet()
 
 func _close_sheet() -> void:
+	SoundManager.close_sheet()
 	if _sheet:
 		_sheet.queue_free()
 		_sheet = null
@@ -737,15 +744,29 @@ func _tab_ringkas(v: VBoxContainer, p: Dictionary, _seed: Dictionary) -> void:
 	g.add_child(_metric("TBS", ("%.1f t" % (_tbs_est(p) / 1000.0)).replace(".", ",")))
 	v.add_child(g)
 	v.add_child(UIKit.wrap(UIKit.meta("Estimasi produksi rotasi ini ~%.0f kg (ikut kesehatan & umur)." % _tbs_est(p), 12)))
-	if TimeManager.harvest_due(p) and _tbs_est(p) > 100.0:
+	if TimeManager.harvest_due(p) and _tbs_est(p) > 0.0:
 		v.add_child(UIKit.wrap(UIKit.label("⚠ TBS matang — segera panen, kalau tidak akan membusuk & tonasenya hilang.", 11, UIKit.ACCENT_700, 600)))
-		v.add_child(UIKit.btn("Panen & jual — lihat tab Panen  ›", func():
-			get_tree().change_scene_to_file("res://scenes/HarvestScreen.tscn"), "primary"))
+		var kg := _tbs_est(p)
+		var net := int(kg * Actions._price(_seed, hp, "pengepul")) - Agronomy.labor_cost("panen", float(p.get("area_ha", 1.0)))
+		v.add_child(UIKit.btn("🌾 Panen Otomatis — Rp%s" % GameState._fmt(max(0, net)), func():
+			_do(Actions.harvest(p)), "primary"))
+		v.add_child(UIKit.wrap(UIKit.meta("Atau masuk blok & panen manual sendiri — hasilnya 10% lebih tinggi drpd panen otomatis.", 11)))
+	elif bool(p.get("harvest_bonus_available", false)):
+		v.add_child(UIKit.wrap(UIKit.label("Panen otomatis blok ini sudah diambil. Masuk blok untuk ambil sisa 10% secara manual.", 11, UIKit.ACCENT_700, 600)))
 	for t in [["Pupuk blok ini  ›", "pupuk"], ["Semprot gulma  ›", "semprot"], ["Periksa hama  ›", "hama"]]:
 		var tid := String(t[1])
 		v.add_child(UIKit.btn(String(t[0]), func():
 			_sheet_tab = tid
 			_render_sheet()))
+	v.add_child(UIKit.rule())
+	var sale := GameState.land_sale_price(_sheet_i)
+	var golden_n := int(p.get("golden_count", 0))
+	var sale_note := ("naik jadi %d%% modal krn %d Golden Tree (+1%%/pokok)" % [100 + golden_n, golden_n]) if golden_n > 0 else "80% dari modal (lahan sawit biasa)"
+	v.add_child(UIKit.wrap(UIKit.meta("Pedagang membeli lahan ini %s." % sale_note, 11)))
+	v.add_child(UIKit.btn("💰 Jual lahan ke pedagang — Rp%s" % GameState._fmt(sale), func():
+		var msg := GameState.sell_land(_sheet_i)
+		UIKit.toast(self, msg)
+		_close_sheet(), "secondary"))
 
 func _tab_pupuk(v: VBoxContainer, p: Dictionary) -> void:
 	var fert_days := GameState.day - int(p.get("last_fertilize_day", GameState.day))
@@ -855,3 +876,36 @@ func _tab_hama(v: VBoxContainer, p: Dictionary) -> void:
 func _do(result: String) -> void:
 	UIKit.toast(self, result)
 	_render_sheet()
+
+func _check_pending_breakeven() -> void:
+	if GameState.break_even_day > 0 and not GameState._break_even_shown:
+		var entries := GameState.hall_of_fame_entries()
+		var rank := 1
+		for i in entries.size():
+			if entries[i].get("kebun_name") == GameState.display_kebun_name():
+				rank = i + 1
+				break
+		_on_break_even(GameState.break_even_day, rank)
+
+func _on_break_even(days_taken: int, rank: int) -> void:
+	if GameState._break_even_shown:
+		return
+	GameState._break_even_shown = true
+	var sheet := _sheet_base()
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 12)
+	sheet.add_child(v)
+	v.add_child(UIKit.label("🎉 Selamat!", 28, UIKit.INK, 800))
+	v.add_child(UIKit.wrap(UIKit.label(
+		"Anda berhasil balik modal dalam %d hari!" % days_taken,
+		16, UIKit.INK, 600)))
+	v.add_child(UIKit.rule())
+	v.add_child(UIKit.label("🏆 Hall of Fame", 20, UIKit.INK, 800))
+	v.add_child(UIKit.wrap(UIKit.label(
+		"Anda masuk dalam hall of fame, peringkat ke-%d" % rank,
+		16, UIKit.ACCENT_700 if rank <= 3 else UIKit.INK, 600)))
+	v.add_child(UIKit.rule())
+	v.add_child(UIKit.btn("Lihat Hall of Fame", func():
+		_close_sheet()
+		get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn"), "primary"))
+	v.add_child(UIKit.btn("Lanjutkan", _close_sheet))
