@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Kebun Sawit Simulator"
 config/description="Simulator kebun sawit — MVP offline. Lihat README.md."
-run/main_scene="res://scenes/MainMenu.tscn"
+run/main_scene="res://scenes/SplashVideo.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

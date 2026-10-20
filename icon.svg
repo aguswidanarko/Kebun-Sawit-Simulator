@@ -1,12 +1,36 @@
-<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-  <rect width="128" height="128" rx="20" fill="#2e7d32"/>
-  <rect x="60" y="64" width="8" height="48" fill="#5d4037"/>
-  <g fill="#1b5e20">
-    <path d="M64 60 C64 60 30 46 20 54 C34 50 54 56 64 62 Z"/>
-    <path d="M64 60 C64 60 98 46 108 54 C94 50 74 56 64 62 Z"/>
-    <path d="M64 58 C64 58 40 30 30 36 C48 34 58 48 64 60 Z"/>
-    <path d="M64 58 C64 58 88 30 98 36 C80 34 70 48 64 60 Z"/>
-    <path d="M64 56 C64 56 60 26 64 20 C68 26 64 56 64 56 Z"/>
-  </g>
-  <circle cx="64" cy="60" r="6" fill="#ffca28"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Background merah app (UIKit.ACCENT) -->
+  <rect width="128" height="128" rx="24" fill="#c0392b"/>
+
+  <!-- Batang utama kelapa sawit -->
+  <rect x="61" y="54" width="6" height="52" rx="3" fill="#fff" opacity="0.9"/>
+
+  <!-- Pelepah kiri bawah -->
+  <path d="M64 62 Q42 72 28 88" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.85"/>
+  <path d="M64 62 Q40 68 22 76" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+
+  <!-- Pelepah kanan bawah -->
+  <path d="M64 62 Q86 72 100 88" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.85"/>
+  <path d="M64 62 Q88 68 106 76" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+
+  <!-- Pelepah kiri tengah -->
+  <path d="M64 55 Q46 52 30 56" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <path d="M64 55 Q50 46 38 42" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.75"/>
+
+  <!-- Pelepah kanan tengah -->
+  <path d="M64 55 Q82 52 98 56" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <path d="M64 55 Q78 46 90 42" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.75"/>
+
+  <!-- Pelepah puncak kiri dan kanan -->
+  <path d="M64 50 Q62 36 58 22" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.95"/>
+  <path d="M64 50 Q70 36 76 22" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.95"/>
+  <path d="M64 50 Q56 38 46 30" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+  <path d="M64 50 Q74 38 84 30" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+
+  <!-- Mahkota / tandan TBS -->
+  <circle cx="64" cy="48" r="8" fill="#e7f29b" opacity="0.95"/>
+  <circle cx="64" cy="48" r="4.5" fill="#c0392b" opacity="0.65"/>
+
+  <!-- Ground line -->
+  <rect x="46" y="104" width="36" height="3" rx="1.5" fill="#fff" opacity="0.45"/>
 </svg>
