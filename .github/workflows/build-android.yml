@@ -3,12 +3,13 @@ name: Build Android APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # bisa dipicu manual dari tab Actions
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: "4.7.2"
   GODOT_RELEASE: "stable"
   EXPORT_NAME: "KebunSawitSim"
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
 jobs:
   build:
@@ -16,84 +17,101 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout kode
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          lfs: false
 
-      # 2. Setup Java (dibutuhkan Android SDK)
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+      # Java sudah tersedia di runner — verifikasi saja
+      - name: Verify Java
+        run: java -version
 
-      # 3. Setup Android SDK + NDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android NDK & build tools
+      # Gunakan SDK yang sudah pre-install di runner (tidak pakai setup-android yang bermasalah)
+      - name: Install Android NDK & build-tools via pre-installed sdkmanager
         run: |
-          sdkmanager "ndk;23.2.8568313"
-          sdkmanager "build-tools;34.0.0"
-          sdkmanager "platforms;android-34"
+          SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
+          yes | ${SDKMANAGER} --sdk_root="${ANDROID_SDK_ROOT}" \
+            "ndk;23.2.8568313" \
+            "build-tools;34.0.0" \
+            "platforms;android-34" 2>/dev/null || true
+          echo "NDK path: ${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
+          ls "${ANDROID_SDK_ROOT}/ndk/" || echo "NDK not installed, trying alternative"
 
-      # 4. Download Godot headless (Linux server export binary)
+      # Download Godot editor Linux (dijalankan dengan --headless)
       - name: Download Godot ${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
         run: |
-          GODOT_FILE="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILE}.zip" -O godot.zip
+          GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip" \
+            -O godot.zip
           unzip -q godot.zip
-          mv "${GODOT_FILE}" godot
-          chmod +x godot
-          sudo mv godot /usr/local/bin/godot
-          echo "Godot installed: $(godot --version)"
+          mv "${GODOT_FILENAME}" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+          godot --version
 
-      # 5. Download export templates Android
+      # Download export templates (berisi android_debug.apk & android_release.apk)
       - name: Download Godot export templates
         run: |
           TEMPLATES_FILE="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TEMPLATES_FILE}" -O templates.tpz
-          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TEMPLATES_FILE}" \
+            -O templates.tpz
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
           mkdir -p "${TEMPLATE_DIR}"
-          unzip -q templates.tpz -d /tmp/templates
-          mv /tmp/templates/templates/* "${TEMPLATE_DIR}/"
-          echo "Templates installed in: ${TEMPLATE_DIR}"
-          ls "${TEMPLATE_DIR}/" | grep android || echo "WARNING: android templates not found"
+          unzip -q templates.tpz -d /tmp/godot_templates
+          mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
+          echo "Templates:"
+          ls "${TEMPLATE_DIR}/" | grep -i android
 
-      # 6. Buat debug keystore untuk signing
+      # Buat debug keystore
       - name: Generate debug keystore
         run: |
-          mkdir -p ~/.android
+          mkdir -p "${HOME}/.android"
           keytool -genkey -v \
-            -keystore ~/.android/debug.keystore \
+            -keystore "${HOME}/.android/debug.keystore" \
             -alias androiddebugkey \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      # 7. Update export_presets.cfg dengan path keystore
-      - name: Configure keystore in export_presets
+      # Tulis Godot editor settings dengan path Android SDK & keystore
+      - name: Configure Godot editor settings
         run: |
-          sed -i "s|keystore/debug=\"\"|keystore/debug=\"$HOME/.android/debug.keystore\"|g" export_presets.cfg
-          sed -i "s|keystore/debug_user=\"\"|keystore/debug_user=\"androiddebugkey\"|g" export_presets.cfg
-          sed -i "s|keystore/debug_password=\"\"|keystore/debug_password=\"android\"|g" export_presets.cfg
+          mkdir -p "${HOME}/.config/godot"
+          cat > "${HOME}/.config/godot/editor_settings-4.tres" << EOF
+          [gd_resource type="EditorSettings" format=3]
 
-      # 8. Buat folder output
-      - name: Create build output folder
-        run: mkdir -p build
+          [resource]
+          export/android/android_sdk_path = "${ANDROID_SDK_ROOT}"
+          export/android/debug_keystore = "${HOME}/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+          cat "${HOME}/.config/godot/editor_settings-4.tres"
 
-      # 9. Export APK
-      - name: Export Android APK
+      # Update export_presets.cfg dengan path keystore absolut
+      - name: Inject keystore path into export_presets.cfg
         run: |
-          godot --headless --export-debug "Android" build/${{ env.EXPORT_NAME }}.apk
-        continue-on-error: false
+          sed -i "s|keystore/debug=\"\"|keystore/debug=\"${HOME}/.android/debug.keystore\"|" export_presets.cfg
+          sed -i "s|keystore/debug_user=\"\"|keystore/debug_user=\"androiddebugkey\"|" export_presets.cfg
+          sed -i "s|keystore/debug_password=\"\"|keystore/debug_password=\"android\"|" export_presets.cfg
 
-      # 10. Upload APK sebagai artifact (bisa didownload dari tab Actions)
+      # Import project (WAJIB di Godot 4 — import resources sebelum export)
+      - name: Import project resources
+        run: |
+          mkdir -p build
+          timeout 60 godot --headless --import --path . 2>&1 || true
+          echo "Import done"
+
+      # Export APK
+      - name: Export Android APK (debug)
+        run: |
+          godot --headless --export-debug "Android" "build/${EXPORT_NAME}.apk" --path . 2>&1
+          ls -lh build/ || echo "build/ kosong"
+
+      # Upload APK sebagai artifact
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.EXPORT_NAME }}-android-apk
+          name: ${{ env.EXPORT_NAME }}-android
           path: build/${{ env.EXPORT_NAME }}.apk
+          if-no-files-found: error
           retention-days: 30
