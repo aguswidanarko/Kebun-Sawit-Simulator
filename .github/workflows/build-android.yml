@@ -6,7 +6,7 @@ on:
   workflow_dispatch:   # bisa dipicu manual dari tab Actions
 
 env:
-  GODOT_VERSION: "4.7"
+  GODOT_VERSION: "4.7.2"
   GODOT_RELEASE: "stable"
   EXPORT_NAME: "KebunSawitSim"
 
@@ -48,26 +48,30 @@ jobs:
           mv "${GODOT_FILE}" godot
           chmod +x godot
           sudo mv godot /usr/local/bin/godot
+          echo "Godot installed: $(godot --version)"
 
       # 5. Download export templates Android
       - name: Download Godot export templates
         run: |
           TEMPLATES_FILE="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TEMPLATES_FILE}" -O templates.tpz
-          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "${TEMPLATE_DIR}"
           unzip -q templates.tpz -d /tmp/templates
-          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}/
+          mv /tmp/templates/templates/* "${TEMPLATE_DIR}/"
+          echo "Templates installed in: ${TEMPLATE_DIR}"
+          ls "${TEMPLATE_DIR}/" | grep android || echo "WARNING: android templates not found"
 
       # 6. Buat debug keystore untuk signing
       - name: Generate debug keystore
         run: |
+          mkdir -p ~/.android
           keytool -genkey -v \
             -keystore ~/.android/debug.keystore \
             -alias androiddebugkey \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
             -dname "CN=Android Debug,O=Android,C=US"
-          mkdir -p ~/.android
 
       # 7. Update export_presets.cfg dengan path keystore
       - name: Configure keystore in export_presets
