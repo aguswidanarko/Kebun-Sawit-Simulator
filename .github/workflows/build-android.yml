@@ -15,6 +15,9 @@ jobs:
   build:
     name: Build Android APK (Release)
     runs-on: ubuntu-latest
+    # Dibutuhkan agar GITHUB_TOKEN boleh membuat Release (lihat step terakhir).
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -130,3 +133,52 @@ jobs:
           path: build/${{ env.EXPORT_NAME }}.apk
           if-no-files-found: error
           retention-days: 30
+
+      # Publikasikan APK sebagai GitHub Release.
+      #
+      # Kenapa perlu, padahal artifact di atas sudah ada:
+      #   - Artifact WAJIB login GitHub -> tester tidak bisa mengunduh.
+      #   - Artifact selalu dibungkus .zip -> tidak bisa tap-install dari HP,
+      #     dan Chrome memblokirnya ("executable bersembunyi di dalam arsip").
+      #   - Artifact kedaluwarsa 30 hari.
+      # Release asset bersifat publik, berupa .apk langsung, dan permanen —
+      # satu link bisa dibagikan ke 12 tester untuk closed testing nanti.
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ github.run_number }}
+          RUN_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          # Pesan commit dilewatkan lewat env, BUKAN di-interpolasi langsung ke
+          # dalam skrip. Pesan commit berisi backtick, kutip, dan baris baru —
+          # interpolasi langsung akan merusak skrip, dan secara umum memasukkan
+          # input yang bisa dikendalikan orang lain ke shell adalah pola injeksi.
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          APK="build/${EXPORT_NAME}.apk"
+          SIZE=$(du -h "${APK}" | cut -f1)
+          # Nama file menyertakan nomor build supaya tester tahu versi mana yang
+          # mereka pegang (semua build sebelumnya bernama sama persis -> bingung).
+          RELEASE_APK="build/${EXPORT_NAME}-${TAG}.apk"
+          cp "${APK}" "${RELEASE_APK}"
+
+          # Catatan rilis ditulis ke file supaya aman terhadap karakter khusus.
+          {
+            echo "**Commit:** \`${COMMIT_SHA}\`"
+            echo "**Ukuran APK:** ${SIZE}"
+            echo
+            echo "${COMMIT_MSG}"
+            echo
+            echo "---"
+            echo "Unduh \`${EXPORT_NAME}-${TAG}.apk\` di bawah, lalu buka di HP."
+            echo "Android akan meminta izin *Install unknown apps* — itu normal"
+            echo "untuk aplikasi di luar Play Store."
+          } > /tmp/release_notes.md
+
+          gh release create "${TAG}" "${RELEASE_APK}" \
+            --title "Build #${RUN_NUMBER}" \
+            --notes-file /tmp/release_notes.md \
+            --prerelease
+          echo "✅ Release ${TAG} terbit"
+          echo "   https://github.com/${REPO}/releases/tag/${TAG}"
