@@ -25,6 +25,9 @@ func _ready() -> void:
 	GameState.blocks_changed.connect(_refresh)
 	GameState.cosmetics_changed.connect(_refresh)
 	GameState.break_even_achieved.connect(_on_break_even)
+	# Tutorial pertama kali masuk dashboard
+	if not GameState.tutorial_shown:
+		call_deferred("_show_tutorial")
 	# Cek apakah break-even sudah dicapai tapi belum ditampilkan (kalau player ada di scene lain saat break-even)
 	call_deferred("_check_pending_breakeven")
 	if OS.get_cmdline_user_args().has("shotdash"):
@@ -99,10 +102,19 @@ func _build() -> void:
 	content.add_child(gm)
 
 	# legenda
-	var lm := UIKit.margin(16, 8, 16, 16)
+	var lm := UIKit.margin(16, 8, 16, 8)
 	var leg := UIKit.wrap(UIKit.meta("TM menghasilkan · TBM belum menghasilkan · ★ Golden Tree"))
 	lm.add_child(leg)
 	content.add_child(lm)
+
+	# Tombol Tugas Lapangan
+	var ftm := UIKit.margin(16, 4, 16, 16)
+	var ft_btn := UIKit.btn("Tugas Lapangan  ›",
+		func(): get_tree().change_scene_to_file("res://scenes/FieldTasksScreen.tscn"),
+		"secondary", 14, 44)
+	ft_btn.icon = load("res://assets/ui/icons/gamepad-2.svg")
+	ftm.add_child(ft_btn)
+	content.add_child(ftm)
 
 	_refresh()
 
@@ -931,3 +943,143 @@ func _on_break_even(days_taken: int, rank: int) -> void:
 		_close_sheet()
 		get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn"), "primary"))
 	v.add_child(UIKit.btn("Lanjutkan", _close_sheet))
+
+# ── Tutorial dashboard pertama kali ────────────────────────────────────────
+const _TUTORIAL_STEPS := [
+	{
+		"title": "Dashboard Kebun",
+		"body": "Ini pusat kendali kebun Anda. Di sini Anda bisa memantau saldo, cuaca, TBS siap panen, dan kondisi setiap blok lahan.",
+		"icon": "dashboard"
+	},
+	{
+		"title": "Strip Statistik",
+		"body": "Saldo kebun, kondisi cuaca hari ini, dan estimasi TBS yang siap dipanen. Tap area Cuaca untuk melihat prakiraan, tap TBS untuk langsung ke layar Panen.",
+		"icon": "timbangan"
+	},
+	{
+		"title": "Maju Hari",
+		"body": "Tap 'Lanjut 1 hari' untuk maju satu hari, atau 'Lanjut 15 hari' untuk loncat. Waktu memengaruhi pertumbuhan gulma, hama, dan kematangan TBS.",
+		"icon": "naik"
+	},
+	{
+		"title": "Panel Pembibitan",
+		"body": "Kelola siklus pembibitan 12 bulan — dari pesan kecambah, Pre Nursery, hingga bibit siap tanam. Bibit sendiri jauh lebih murah dari beli jadi.",
+		"icon": "daun"
+	},
+	{
+		"title": "Peta Blok 3×3",
+		"body": "Tap blok untuk melihat detail dan mengambil tindakan: pupuk, semprot gulma, tangani hama, atau panen. Blok merah = ada masalah yang perlu ditangani.",
+		"icon": "penilaian"
+	},
+	{
+		"title": "Tugas Lapangan",
+		"body": "Tombol 'Tugas Lapangan' di bawah peta membuka 7 minigame aktivitas lapangan. Mainkan sendiri untuk bonus 80–120%, atau tugaskan ke tim (selalu 2 bintang, bayar HK).",
+		"icon": "gamepad-2"
+	},
+	{
+		"title": "Icon Atas",
+		"body": "👕 Kostum karakter · 🛍 Toko kosmetik · ⭐ Hall of Fame · 🛒 Top-up modal · ☰ Menu utama. Semuanya bisa diakses kapan saja dari header.",
+		"icon": "setelan"
+	},
+]
+
+var _tutorial_idx: int = 0
+var _tutorial_overlay: CanvasLayer
+
+func _show_tutorial() -> void:
+	GameState.tutorial_shown = true
+	GameState.save_game()
+	_tutorial_idx = 0
+	_build_tutorial_step()
+
+func _build_tutorial_step() -> void:
+	if _tutorial_overlay:
+		_tutorial_overlay.queue_free()
+	if _tutorial_idx >= _TUTORIAL_STEPS.size():
+		return
+
+	_tutorial_overlay = CanvasLayer.new()
+	add_child(_tutorial_overlay)
+
+	var backdrop := ColorRect.new()
+	backdrop.color = Color(UIKit.INK.r, UIKit.INK.g, UIKit.INK.b, 0.72)
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_tutorial_overlay.add_child(backdrop)
+
+	var card_host := Control.new()
+	card_host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_tutorial_overlay.add_child(card_host)
+
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UIKit.box(UIKit.BG, UIKit.INK, 2, 0))
+	card.set_anchors_preset(Control.PRESET_CENTER_WIDE)
+	card.offset_left = 24; card.offset_right = -24
+	card.offset_top = -160; card.offset_bottom = 160
+	card_host.add_child(card)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 20)
+	m.add_theme_constant_override("margin_right", 20)
+	m.add_theme_constant_override("margin_top", 18)
+	m.add_theme_constant_override("margin_bottom", 18)
+	card.add_child(m)
+
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 12)
+	m.add_child(v)
+
+	var step := _TUTORIAL_STEPS[_tutorial_idx]
+
+	# Header: ikon + kicker + judul
+	var hrow := HBoxContainer.new()
+	hrow.add_theme_constant_override("separation", 10)
+	var icon_name: String = step.get("icon", "info")
+	if ResourceLoader.exists("res://assets/ui/icons/%s.svg" % icon_name):
+		hrow.add_child(UIKit.icon(icon_name, 22, UIKit.ACCENT))
+	var hv := VBoxContainer.new()
+	hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hv.add_theme_constant_override("separation", 2)
+	hv.add_child(UIKit.kicker("TUTORIAL %d/%d" % [_tutorial_idx + 1, _TUTORIAL_STEPS.size()]))
+	hv.add_child(UIKit.label(step.get("title", ""), 18, UIKit.INK, 800))
+	hrow.add_child(hv)
+	v.add_child(hrow)
+
+	v.add_child(UIKit.rule())
+
+	var body_lbl := UIKit.label(step.get("body", ""), 14, UIKit.N700)
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(body_lbl)
+
+	var sp := Control.new(); sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(sp)
+
+	# Navigasi
+	var nav := HBoxContainer.new()
+	nav.add_theme_constant_override("separation", 10)
+	v.add_child(nav)
+
+	if _tutorial_idx > 0:
+		var back := UIKit.btn("← Sebelumnya", func():
+			_tutorial_idx -= 1
+			_build_tutorial_step())
+		back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nav.add_child(back)
+
+	var is_last := (_tutorial_idx == _TUTORIAL_STEPS.size() - 1)
+	var next := UIKit.btn(
+		"Mulai bermain ✓" if is_last else "Lanjut →",
+		func():
+			if is_last:
+				if _tutorial_overlay: _tutorial_overlay.queue_free(); _tutorial_overlay = null
+			else:
+				_tutorial_idx += 1
+				_build_tutorial_step(),
+		"primary" if is_last else "secondary", 14, 44)
+	next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nav.add_child(next)
+
+	if not is_last:
+		var skip := UIKit.btn("Lewati", func():
+			if _tutorial_overlay: _tutorial_overlay.queue_free(); _tutorial_overlay = null)
+		skip.add_theme_color_override("font_color", UIKit.N600)
+		v.add_child(skip)

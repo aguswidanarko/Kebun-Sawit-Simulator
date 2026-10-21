@@ -377,6 +377,15 @@ func start_new_game(pid: String, diff: String = "normal") -> void:
 	nursery = {}
 	tph = {}
 	break_even_day = -1
+	field_task_results = {}
+	tutorial_shown = false
+
+## Hasil minigame Tugas Lapangan: { task_id: {stars:int, mode:"self"|"team", day:int} }
+var field_task_results: Dictionary = {}
+## Tugas yang sedang dimainkan (diteruskan ke FieldTaskPlay)
+var active_field_task: Dictionary = {}
+## Apakah tutorial dashboard sudah ditampilkan?
+var tutorial_shown: bool = false
 
 var buy_target_plot: int = 0         # slot yang sedang dibeli di Pasar Lahan
 # --- Pedagang: gudang (inv) + harga harian ---
@@ -816,6 +825,45 @@ func mark_objective(key: String) -> void:
 func profile_mods() -> Dictionary:
 	return Database.get_profile(profile_id).get("modifiers", {})
 
+# ──────────────────────────────────────────────── Tugas Lapangan ────
+
+## Faktor kecepatan profil (buff Arman mengurangi HK).
+func field_task_speed() -> float:
+	return float(profile_mods().get("field_speed", 1.0))
+
+## Biaya HK delegasi: hk × upah, dibagi speed profil.
+func field_task_delegate_cost(hk: float) -> int:
+	var wage := float(Database.params.get("daily_wage_rp", 120000))
+	return int(round(hk * wage / field_task_speed()))
+
+## Simpan hasil tugas lapangan (best-of untuk mode sendiri).
+## mode = "self" | "team". Tim selalu 2 bintang.
+func complete_field_task(task_id: String, stars: int, mode: String) -> void:
+	var existing: Dictionary = field_task_results.get(task_id, {})
+	var prev_stars := int(existing.get("stars", 0))
+	var prev_mode  := String(existing.get("mode", ""))
+	# Hasil sendiri menimpa hasil tim; untuk sesama mode simpan bintang terbaik.
+	var should_update := false
+	if mode == "self":
+		should_update = (prev_mode != "self") or (stars > prev_stars)
+	else:  # team
+		should_update = (prev_mode == "" ) or (prev_mode == "team" and stars > prev_stars)
+	if should_update:
+		field_task_results[task_id] = { "stars": stars, "mode": mode, "day": day }
+	apply_field_task_effect(task_id, stars)
+	emit_signal("blocks_changed")
+
+## Hook efek gameplay dari hasil tugas lapangan (TODO: sambungkan ke Agronomy).
+func apply_field_task_effect(task_id: String, stars: int) -> void:
+	# TODO: sambungkan ke efek simulasi.
+	# Contoh: semprot+panen → efektivitas; inspeksi → akurasi diagnosis.
+	pass
+
+## Reset hasil tugas lapangan (tiap rotasi blok).
+func reset_field_tasks() -> void:
+	field_task_results = {}
+	emit_signal("blocks_changed")
+
 ## Horison prakiraan cuaca (hari) sesuai profil — buff Nadia memperpanjang ini.
 func forecast_days() -> int:
 	return int(profile_mods().get("weather_forecast_days",
@@ -881,6 +929,8 @@ func save_game() -> void:
 		"plots": plots, "inv": inv, "ledger": ledger, "nursery": nursery, "tph": tph,
 		"purchase_history": purchase_history, "break_even_day": break_even_day,
 		"difficulty": difficulty,
+		"field_task_results": field_task_results,
+		"tutorial_shown": tutorial_shown,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
@@ -929,6 +979,9 @@ func load_game() -> bool:
 	break_even_day = int(data.get("break_even_day", -1))
 	_break_even_shown = (break_even_day >= 0)
 	difficulty = str(data.get("difficulty", "normal"))
+	var ftr = data.get("field_task_results", {})
+	field_task_results = ftr if ftr is Dictionary else {}
+	tutorial_shown = bool(data.get("tutorial_shown", false))
 	visiting = {}
 	emit_signal("cosmetics_changed")
 	emit_signal("cash_changed", cash)
