@@ -50,6 +50,7 @@ func _ready() -> void:
 		get_tree().call_deferred("change_scene_to_file", "res://scenes/HarvestScreen.tscn"); return
 	for shot in [["shotcuaca","res://scenes/CuacaScreen.tscn"],
 				 ["shotsosial","res://scenes/SosialScreen.tscn"],
+				 ["shothof","res://scenes/HallOfFameScreen.tscn"],
 				 ["shotlaporan","res://scenes/LaporanScreen.tscn"]]:
 		if a.has(String(shot[0])):
 			GameState.start_new_game("anak_pengusaha"); GameState.seed_demo_kebun()
