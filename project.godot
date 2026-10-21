@@ -29,9 +29,9 @@ LeaderboardManager="*res://autoload/LeaderboardManager.gd"
 
 window/size/viewport_width=390
 window/size/viewport_height=844
-window/handheld/orientation=1
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation=1
 
 [gui]
 
@@ -41,5 +41,5 @@ theme/custom="res://assets/ui/modernist_theme.tres"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-environment/defaults/default_clear_color=Color(0.953, 0.949, 0.949, 1)
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.953, 0.949, 0.949, 1)
