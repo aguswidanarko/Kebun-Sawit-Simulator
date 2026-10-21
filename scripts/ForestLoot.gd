@@ -8,16 +8,17 @@ extends RefCounted
 ## block["forest_slots"], ikut tersimpan oleh save/load umum GameState.
 
 const MONTH_DAYS := 30     # siklus refresh slot setelah dipungut (spek: "1 bulan kemudian")
-const MAX_SLOTS := 10      # jumlah titik loot aktif maksimum per blok
+const MAX_SLOTS := 5       # 5 item drop aktif per scene sesuai update spesifikasi
 const INNER_FRAC := 0.68   # jarak minimal titik loot dari pusat (fraksi radius jelajah) — di luar area tanam inti
 const OUTER_MARGIN_M := 4.0 # jarak titik loot dari dinding hutan (radius jelajah - margin)
 
 ## rarity -> { weight, ids[] }. id harus ada di data/merchant_inventory_start.json.
+## Ditambah item baru agar variasi item drop lebih banyak (5 slot per scene).
 const TABLE := [
-	{ "rarity": "umum", "weight": 60, "ids": ["tiram", "kuping", "jangkrik"] },
-	{ "rarity": "jarang", "weight": 25, "ids": ["jahe", "sambiloto", "pasak", "kroto", "madu_hutan"] },
-	{ "rarity": "langka", "weight": 12, "ids": ["ayam", "landak", "burung_hantu", "monyet"] },
-	{ "rarity": "epik", "weight": 3, "ids": ["bacan", "kalimaya", "intan"] },
+	{ "rarity": "umum",   "weight": 55, "ids": ["tiram", "kuping", "jangkrik", "bambu", "daun_pisang"] },
+	{ "rarity": "jarang", "weight": 28, "ids": ["jahe", "sambiloto", "pasak", "kroto", "madu_hutan", "rotan", "aren"] },
+	{ "rarity": "langka", "weight": 13, "ids": ["ayam", "landak", "burung_hantu", "monyet", "kijang"] },
+	{ "rarity": "epik",   "weight": 4,  "ids": ["bacan", "kalimaya", "intan", "emas_sungai"] },
 ]
 
 ## Pilih 1 item_id acak sesuai bobot rarity di TABLE.

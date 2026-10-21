@@ -152,7 +152,7 @@ static func transport_sell(buyer := "pabrik") -> String:
 	return "Angkut %.0f kg → %s @ Rp%.0f/kg = Rp%s.%s" % [kg, buyer, price, GameState._fmt(gross), note]
 
 static func _price(seed: Dictionary, health: float, buyer: String) -> float:
-	var base := float(Database.params.get("tbs_price_rp_per_kg", 2800))
+	var base := GameState.tbs_price_effective()
 	if buyer == "pengepul":
 		return base * float(Database.params.get("pengepul_price_factor", 0.85))
 	var baseline := float(Database.params.get("rendemen_baseline_pct", 22.0))

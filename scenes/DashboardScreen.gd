@@ -251,7 +251,11 @@ func _refresh() -> void:
 	weather_val.text = GameState.weather.capitalize()
 	weather_icon_rect.texture = load("res://assets/ui/icons/%s.svg" % UIKit.weather_icon(GameState.weather))
 	tbs_val.text = ("%.1f t" % (tbs / 1000.0)).replace(".", ",")
-	kicker_label.text = "TAHUN %d · HARI %d" % [1 + (GameState.day - 1) / 365, 1 + (GameState.day - 1) % 365]
+	var diff_suffix := ""
+	if GameState.difficulty != "normal":
+		var dlabels := {"sulit": " · ⚠ SULIT", "krisis": " · 🔥 KRISIS"}
+		diff_suffix = dlabels.get(GameState.difficulty, "")
+	kicker_label.text = "TAHUN %d · HARI %d%s" % [1 + (GameState.day - 1) / 365, 1 + (GameState.day - 1) % 365, diff_suffix]
 	kname_label.text = GameState.display_kebun_name()
 	meta_ha.text = "%d ha" % ha + (" · " if need > 0 else "")
 	meta_need.text = ("%d perlu tindakan" % need) if need > 0 else ""

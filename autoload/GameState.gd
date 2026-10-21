@@ -26,6 +26,28 @@ var blocks: Array = []  # tiap blok = Dictionary (lihat new_block())
 var break_even_day: int = -1  # hari saat pertama kali mencapai 100M (dari gameplay, bukan IAP)
 var _break_even_shown: bool = false  # flag untuk memastikan prompt hanya ditampilkan sekali
 
+# --- Level Kesulitan ---
+# "normal" | "sulit" | "krisis"
+var difficulty: String = "normal"
+
+## Label & efek tiap level.
+const DIFFICULTY_CONFIG := {
+	"normal":  { "label": "Normal",         "label_short": "NORMAL",  "tbs_price": 2800, "price_factor": 1.00 },
+	"sulit":   { "label": "Sulit",           "label_short": "SULIT",   "tbs_price": 2400, "price_factor": 1.10 },
+	"krisis":  { "label": "Krisis Moneter",  "label_short": "KRISIS",  "tbs_price": 2000, "price_factor": 1.20 },
+}
+
+func difficulty_cfg() -> Dictionary:
+	return DIFFICULTY_CONFIG.get(difficulty, DIFFICULTY_CONFIG["normal"])
+
+## Harga TBS efektif sesuai level kesulitan (menggantikan tbs_price di params).
+func tbs_price_effective() -> float:
+	return float(difficulty_cfg().get("tbs_price", 2800))
+
+## Faktor harga input (pupuk, pestisida, bibit) sesuai kesulitan.
+func input_price_factor() -> float:
+	return float(difficulty_cfg().get("price_factor", 1.0))
+
 # Misi awal / tutorial (action-based, menggantikan "7 hari pertama").
 var objectives: Dictionary = _fresh_objectives()
 
@@ -334,8 +356,9 @@ func _ready() -> void:
 func has_save() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
-func start_new_game(pid: String) -> void:
+func start_new_game(pid: String, diff: String = "normal") -> void:
 	profile_id = pid
+	difficulty = diff if DIFFICULTY_CONFIG.has(diff) else "normal"
 	cash = int(Database.params.get("base_capital_rp", 100000000))
 	day = 1
 	weather = "cerah"
@@ -627,6 +650,11 @@ func calculate_hof_score(entry: Dictionary) -> float:
 	# Weighted score: 40% days, 40% profit, 20% plots
 	return days_factor * 0.4 + profit_factor * 0.4 + plots_factor * 0.2
 
+## Path file HoF per level kesulitan.
+func _hof_path(diff: String = "") -> String:
+	var d := diff if diff != "" else difficulty
+	return "user://hall_of_fame_%s.json" % d
+
 ## Dipanggil saat cash_changed — cek break-even & update Hall of Fame.
 func maybe_record_hall_of_fame() -> void:
 	var profit := current_profit()
@@ -647,10 +675,14 @@ func maybe_record_hall_of_fame() -> void:
 			existing_idx = i
 			break
 
+	# Nomor minggu in-game (setiap 7 hari)
+	var week_num := int((day - 1) / 7) + 1
+
 	var entry := {
 		"kebun_name": display_kebun_name(), "profile_id": profile_id,
 		"profit": profit, "day": day, "break_even_day": break_even_day,
-		"plots_owned": plots_owned(),
+		"plots_owned": plots_owned(), "difficulty": difficulty,
+		"week": week_num,
 	}
 
 	if existing_idx >= 0:
@@ -665,10 +697,13 @@ func maybe_record_hall_of_fame() -> void:
 		return score_a > score_b)
 	entries = entries.slice(0, HALL_OF_FAME_CAP)
 
-	var f := FileAccess.open(HALL_OF_FAME_PATH, FileAccess.WRITE)
+	# Simpan ke file per level kesulitan
+	var f := FileAccess.open(_hof_path(), FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(entries, "\t"))
 		f.close()
+	# Juga simpan ke file global (semua level)
+	_upsert_global_hof(entry)
 
 	# Emit break_even_achieved dengan rank yang benar (setelah sort & save)
 	if should_emit_breakeven and not _break_even_shown:
@@ -680,7 +715,39 @@ func maybe_record_hall_of_fame() -> void:
 
 	LeaderboardManager.submit_score(profit)
 
-func hall_of_fame_entries() -> Array:
+## Update file HoF global (semua level kesulitan digabung, dengan kolom difficulty).
+func _upsert_global_hof(entry: Dictionary) -> void:
+	var global_path := HALL_OF_FAME_PATH
+	var all: Array = []
+	if FileAccess.file_exists(global_path):
+		var d = JSON.parse_string(FileAccess.get_file_as_string(global_path))
+		if d is Array: all = d
+	var idx := -1
+	for i in all.size():
+		if all[i].get("kebun_name") == entry.get("kebun_name") and \
+		   all[i].get("difficulty") == entry.get("difficulty"):
+			idx = i; break
+	if idx >= 0: all[idx] = entry
+	else: all.append(entry)
+	all.sort_custom(func(a, b): return calculate_hof_score(a) > calculate_hof_score(b))
+	all = all.slice(0, HALL_OF_FAME_CAP * 3)
+	var f := FileAccess.open(global_path, FileAccess.WRITE)
+	if f: f.store_string(JSON.stringify(all, "\t")); f.close()
+
+## Ambil entri HoF untuk level kesulitan tertentu (kosong = current difficulty).
+func hall_of_fame_entries(diff: String = "") -> Array:
+	var path := _hof_path(diff)
+	if not FileAccess.file_exists(path):
+		# Fallback ke file lama (sebelum update)
+		if not FileAccess.file_exists(HALL_OF_FAME_PATH):
+			return []
+		var old = JSON.parse_string(FileAccess.get_file_as_string(HALL_OF_FAME_PATH))
+		return old if old is Array else []
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	return data if data is Array else []
+
+## Ambil entri HoF semua level (untuk tab "Semua" di HallOfFameScreen).
+func hall_of_fame_entries_all() -> Array:
 	if not FileAccess.file_exists(HALL_OF_FAME_PATH):
 		return []
 	var data = JSON.parse_string(FileAccess.get_file_as_string(HALL_OF_FAME_PATH))
@@ -813,6 +880,7 @@ func save_game() -> void:
 		"story_flags": story_flags, "land_acquired": land_acquired, "land_class": land_class,
 		"plots": plots, "inv": inv, "ledger": ledger, "nursery": nursery, "tph": tph,
 		"purchase_history": purchase_history, "break_even_day": break_even_day,
+		"difficulty": difficulty,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:
@@ -860,6 +928,7 @@ func load_game() -> bool:
 	tph = tp if tp is Dictionary else {}
 	break_even_day = int(data.get("break_even_day", -1))
 	_break_even_shown = (break_even_day >= 0)
+	difficulty = str(data.get("difficulty", "normal"))
 	visiting = {}
 	emit_signal("cosmetics_changed")
 	emit_signal("cash_changed", cash)

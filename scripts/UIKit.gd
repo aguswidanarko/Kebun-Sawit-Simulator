@@ -438,6 +438,28 @@ static func screen_root(host: Control, tab: String) -> VBoxContainer:
 	col.set_anchors_preset(Control.PRESET_FULL_RECT)
 	col.add_theme_constant_override("separation", 0)
 	host.add_child(col)
+	# Badge level kesulitan — muncul di semua halaman bila bukan Normal
+	var diff: String = ""
+	if Engine.has_singleton("GameState"):
+		diff = str(Engine.get_singleton("GameState").difficulty)
+	elif host.get_node_or_null("/root/GameState"):
+		diff = str(host.get_node("/root/GameState").difficulty)
+	if diff != "" and diff != "normal":
+		var badge_colors := {"sulit": Color(0.86, 0.44, 0.05), "krisis": Color(0.75, 0.12, 0.12)}
+		var badge_labels := {"sulit": "⚠ SULIT", "krisis": "🔥 KRISIS MONETER"}
+		var strip := PanelContainer.new()
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = badge_colors.get(diff, Color(0.5, 0.5, 0.5))
+		strip.add_theme_stylebox_override("panel", sb)
+		strip.custom_minimum_size = Vector2(0, 22)
+		var lbl := Label.new()
+		lbl.text = badge_labels.get(diff, diff.to_upper())
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.add_theme_font_size_override("font_size", 11)
+		lbl.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
+		lbl.add_theme_font_override("font", bold())
+		strip.add_child(lbl)
+		col.add_child(strip)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

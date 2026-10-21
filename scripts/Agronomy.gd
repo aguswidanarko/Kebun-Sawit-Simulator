@@ -251,7 +251,9 @@ static func labor_cost(activity: String, area: float) -> int:
 # ---------------------------------------------------------------- Util
 static func _fert_price(code: String) -> float:
 	var m: Dictionary = Database.params.get("fertilizer_price_rp_per_kg", {})
-	return float(m.get(code, m.get("default", 7000)))
+	var base := float(m.get(code, m.get("default", 7000)))
+	# Terapkan faktor harga input sesuai level kesulitan
+	return base * GameState.input_price_factor()
 
 static func _clamp_fert_age(age: int, lc: String) -> int:
 	# T_Pupuk: umur di luar rentang -> pakai baris terdekat (lihat catatan sheet).

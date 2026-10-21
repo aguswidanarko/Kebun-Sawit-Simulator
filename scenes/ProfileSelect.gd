@@ -3,9 +3,11 @@ extends Control
 ## efek glow saat hover/terpilih, tombol pilih di bawah. (Gratis, tak terkunci bayar.)
 
 var selected_id: String = ""
+var selected_difficulty: String = "normal"
 var cards: Dictionary = {}          # id -> PanelContainer
 var detail_label: RichTextLabel
 var pick_button: Button
+var _diff_btns: Dictionary = {}     # difficulty_id -> Button
 
 func _ready() -> void:
 	_build_ui()
@@ -80,6 +82,53 @@ func _build_ui() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(spacer)
+
+	# ── Pilih level kesulitan ──────────────────────────────────────
+	var diff_label := Label.new()
+	diff_label.text = "LEVEL KESULITAN"
+	diff_label.add_theme_font_size_override("font_size", 11)
+	diff_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.6))
+	root.add_child(diff_label)
+
+	var diff_row := HBoxContainer.new()
+	diff_row.add_theme_constant_override("separation", 8)
+	root.add_child(diff_row)
+
+	const DIFF_INFO := [
+		["normal", "Normal",  "Harga TBS Rp2.800/kg, harga input normal"],
+		["sulit",  "Sulit",   "TBS jatuh ke Rp2.400/kg, harga pupuk +10%"],
+		["krisis", "Krisis",  "TBS Rp2.000/kg, semua harga naik +20%"],
+	]
+	for entry in DIFF_INFO:
+		var did: String = entry[0]
+		var dlabel: String = entry[1]
+		var b := Button.new()
+		b.text = dlabel
+		b.tooltip_text = entry[2]
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 40)
+		b.add_theme_font_size_override("font_size", 13)
+		var is_sel := (did == selected_difficulty)
+		var col := Color(0.75, 0.20, 0.15) if did == "krisis" else (Color(0.85, 0.50, 0.10) if did == "sulit" else Color(0.20, 0.55, 0.28))
+		var bsb := StyleBoxFlat.new()
+		bsb.bg_color = col if is_sel else Color(0.12, 0.15, 0.13, 0.9)
+		bsb.set_corner_radius_all(8)
+		bsb.set_border_width_all(2)
+		bsb.border_color = col
+		b.add_theme_stylebox_override("normal", bsb)
+		b.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
+		b.pressed.connect(func(): _set_difficulty(did))
+		diff_row.add_child(b)
+		_diff_btns[did] = b
+
+	# Deskripsi kesulitan terpilih
+	var diff_desc := Label.new()
+	diff_desc.name = "DiffDesc"
+	diff_desc.text = "Harga TBS Rp2.800/kg, harga input normal"
+	diff_desc.add_theme_font_size_override("font_size", 11)
+	diff_desc.add_theme_color_override("font_color", Color(0.7, 0.8, 0.7))
+	diff_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(diff_desc)
 
 	# Tombol pilih (besar, di bawah)
 	pick_button = Button.new()
@@ -225,6 +274,29 @@ func _update_detail(p: Dictionary) -> void:
 		accent, p.get("name", "?"), p.get("prolog", ""),
 		p.get("buff_text", ""), p.get("challenge_text", ""), p.get("tutorial", "")]
 
+func _set_difficulty(did: String) -> void:
+	selected_difficulty = did
+	const DIFF_DESCS := {
+		"normal": "Harga TBS Rp2.800/kg, harga input normal",
+		"sulit":  "TBS jatuh ke Rp2.400/kg, harga pupuk +10%",
+		"krisis": "TBS Rp2.000/kg, semua harga naik +20%",
+	}
+	# Update style tombol
+	const DIFF_COLORS := {"normal": "335e3b", "sulit": "d97706", "krisis": "b91c1c"}
+	for did2 in _diff_btns:
+		var b2: Button = _diff_btns[did2]
+		var col2 := Color.html(DIFF_COLORS.get(did2, "335e3b"))
+		var bsb2 := StyleBoxFlat.new()
+		bsb2.bg_color = col2 if did2 == selected_difficulty else Color(0.12, 0.15, 0.13, 0.9)
+		bsb2.set_corner_radius_all(8)
+		bsb2.set_border_width_all(2)
+		bsb2.border_color = col2
+		b2.add_theme_stylebox_override("normal", bsb2)
+	# Update deskripsi
+	var desc_lbl := get_node_or_null("DiffDesc")
+	if desc_lbl:
+		(desc_lbl as Label).text = DIFF_DESCS.get(did, "")
+
 func _choose(id: String) -> void:
-	GameState.start_new_game(id)
+	GameState.start_new_game(id, selected_difficulty)
 	get_tree().change_scene_to_file("res://scenes/Story.tscn")
