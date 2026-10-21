@@ -39,6 +39,25 @@ static func spray(b: Dictionary, location := "Piringan & pasar pikul", weed := "
 		plan.get("components", []).size(), GameState.weather, eff * 100.0, GameState._fmt(mat + lab),
 		before * 100.0, float(b.get("weed_level", 0)) * 100.0]
 
+## Pengendalian gulma MANUAL — TB-0 tidak ada semprot, harus manual.
+## Biaya 3× semprot kimia; tidak terpengaruh cuaca; efektivitas 100%.
+static func manual_gulma(b: Dictionary) -> String:
+	var weed := float(b.get("weed_level", 0.0))
+	if weed < 0.05:
+		return "Gulma sangat rendah (%.0f%%) — tidak perlu pengendalian manual." % (weed * 100.0)
+	var area := float(b.get("area_ha", 1.0))
+	# Biaya = 3× biaya semprot (padat karya karena manual)
+	var spray_lab := Agronomy.labor_cost("semprot", area)
+	var total := int(spray_lab * 3.0 * (1.0 - _discount()))
+	if not GameState.spend(total):
+		return "Dana tidak cukup untuk pengendalian manual (Rp%s)." % GameState._fmt(total)
+	var before := weed
+	# Efektivitas 100%, tidak terpengaruh cuaca
+	Agronomy.apply_spray(b, 1.0)
+	GameState.mark_objective("sprayed")
+	return "Pengendalian manual selesai (100%% efektif) — Rp%s. Gulma %.0f%%→%.0f%%." % [
+		GameState._fmt(total), before * 100.0, float(b.get("weed_level", 0)) * 100.0]
+
 static func inspect(b: Dictionary) -> String:
 	var pest = b.get("pest")
 	if pest == null:

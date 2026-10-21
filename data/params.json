@@ -36,10 +36,12 @@
   "spray_health_recovery": 0.12,
   "fertilize_health_recovery": 0.10,
 
-  "_harga_pupuk": "Harga pupuk Rp/kg — PLACEHOLDER gameplay (T_Harga hanya berisi pestisida). Verifikasi sebelum rilis.",
+  "_harga_pupuk": "Harga pupuk Rp/kg. Mikro (HGFB/CuSO4/ZnSO4/MgSO4) dikoreksi Rp45.000/kg per catatan perbaikan.",
   "fertilizer_price_rp_per_kg": {
     "Urea": 8000, "RPH": 4500, "MOP": 9500, "Kieserite": 6000,
-    "Dolomit": 2000, "NPK": 10000, "TSP": 9000, "default": 7000
+    "Dolomit": 2000, "NPK": 10000, "TSP": 9000,
+    "HGFB": 45000, "CuSO4": 45000, "ZnSO4": 45000, "MgSO4": 45000,
+    "default": 7000
   },
 
   "_cuaca": "Bobot cuaca harian + faktor efektivitas semprot.",

@@ -821,6 +821,24 @@ func _tab_semprot(v: VBoxContainer, p: Dictionary) -> void:
 	v.add_child(UIKit.wrap(UIKit.meta("Semprot menurunkan gulma & menaikkan kesehatan (ikut cuaca).", 12)))
 	v.add_child(UIKit.btn("Semprot gulma sekarang", func(): _do(Actions.spray(p)), "primary"))
 
+	# Pengendalian manual (TB-0: tidak ada semprot kimia, wajib manual)
+	v.add_child(UIKit.rule())
+	var manual_box := PanelContainer.new()
+	manual_box.add_theme_stylebox_override("panel", UIKit.box(UIKit.SURFACE, UIKit.DIVIDER, 1, 10))
+	var mv := VBoxContainer.new()
+	mv.add_theme_constant_override("separation", 6)
+	manual_box.add_child(mv)
+	mv.add_child(UIKit.kicker("Pengendalian Manual", UIKit.N700))
+	var weed_pct := int(float(p.get("weed_level", 0)) * 100)
+	var spray_lab := Agronomy.labor_cost("semprot", float(p.get("area_ha", 1.0)))
+	var manual_cost := int(spray_lab * 3.0)
+	mv.add_child(UIKit.wrap(UIKit.meta(
+		"Cocok untuk TB-0 atau saat cuaca buruk. Biaya 3× semprot kimia karena padat karya. Efektivitas 100%%, tidak terpengaruh cuaca.", 12)))
+	mv.add_child(UIKit.meta("Gulma saat ini: %d%%  ·  Perkiraan biaya: Rp%s" % [weed_pct, GameState._fmt(manual_cost)], 12))
+	mv.add_child(UIKit.btn("Manual Gulma — Rp%s" % GameState._fmt(manual_cost),
+		func(): _do(Actions.manual_gulma(p)), "secondary"))
+	v.add_child(manual_box)
+
 func _tab_hama(v: VBoxContainer, p: Dictionary) -> void:
 	var pest = p.get("pest")
 	if pest == null:
