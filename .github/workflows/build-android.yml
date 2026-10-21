@@ -1,4 +1,4 @@
-name: Build Android AAB
+name: Build Android APK
 
 on:
   push:
@@ -13,7 +13,7 @@ env:
 
 jobs:
   build:
-    name: Build Android AAB (Release)
+    name: Build Android APK (Release)
     runs-on: ubuntu-latest
 
     steps:
@@ -59,10 +59,10 @@ jobs:
 
       # Setup release keystore dari GitHub Secrets.
       # Buat 4 secrets di Settings > Secrets > Actions:
-      #   ANDROID_KEYSTORE_BASE64  — output dari: base64 -w0 release.keystore
+      #   ANDROID_KEYSTORE_BASE64  — output dari: base64 -i release.keystore | pbcopy
       #   ANDROID_KEYSTORE_PASS    — storepass keystore
-      #   ANDROID_KEY_ALIAS        — alias key (mis. "upload")
-      #   ANDROID_KEY_PASS         — keypass (biasanya sama dengan storepass)
+      #   ANDROID_KEY_ALIAS        — alias key ("upload")
+      #   ANDROID_KEY_PASS         — keypass (sama dengan storepass)
       - name: Setup release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -77,6 +77,7 @@ jobs:
             echo "RELEASE_KEYSTORE_USER=${KEY_ALIAS}" >> "$GITHUB_ENV"
             echo "RELEASE_KEYSTORE_PASS=${KEYSTORE_PASS}" >> "$GITHUB_ENV"
             echo "RELEASE_KEY_PASS=${KEY_PASS}" >> "$GITHUB_ENV"
+            echo "✅ Release keystore dari secrets"
           else
             keytool -genkey -v \
               -keystore "${HOME}/.android/release.keystore" \
@@ -88,7 +89,7 @@ jobs:
             echo "RELEASE_KEYSTORE_USER=androiddebugkey" >> "$GITHUB_ENV"
             echo "RELEASE_KEYSTORE_PASS=android" >> "$GITHUB_ENV"
             echo "RELEASE_KEY_PASS=android" >> "$GITHUB_ENV"
-            echo "::warning::ANDROID_KEYSTORE_BASE64 secret tidak diset — menggunakan debug keystore. AAB ini TIDAK valid untuk Play Store."
+            echo "::warning::ANDROID_KEYSTORE_BASE64 secret tidak diset — menggunakan debug keystore."
           fi
 
       - name: Configure Godot editor settings
@@ -103,7 +104,6 @@ jobs:
           export/android/debug_keystore_user = "${RELEASE_KEYSTORE_USER}"
           export/android/debug_keystore_pass = "${RELEASE_KEYSTORE_PASS}"
           EOF
-          cat "${HOME}/.config/godot/editor_settings-4.tres"
 
       - name: Inject release keystore into export_presets.cfg
         run: |
@@ -112,57 +112,21 @@ jobs:
           sed -i "s|keystore/release_password=\"\"|keystore/release_password=\"${RELEASE_KEYSTORE_PASS}\"|" export_presets.cfg
           grep "keystore/release" export_presets.cfg | head -3
 
-      # Install Android build template ke project (wajib saat use_gradle_build=true).
-      # android_source.zip sudah ada di dalam templates.tpz yang didownload di atas —
-      # tinggal diekstrak ke android/build/ supaya Godot bisa jalankan gradle export.
-      - name: Install Android build template
-        run: |
-          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
-          SRC="${TEMPLATE_DIR}/android_source.zip"
-          if [ ! -f "${SRC}" ]; then
-            echo "❌ android_source.zip tidak ada di ${TEMPLATE_DIR}"
-            ls "${TEMPLATE_DIR}/" | head -20
-            exit 1
-          fi
-          mkdir -p android/build
-          unzip -q "${SRC}" -d android/build/
-          # Buat .gdignore agar Godot tidak mencoba import file Java/Kotlin/Gradle
-          touch android/build/.gdignore
-          # Buat .build_version — Godot mengecek file ini untuk verifikasi template cocok
-          # dengan versi engine. Tanpa file ini export gagal dengan "no version info".
-          # Gunakan `godot --version` (tanpa --headless) yang output-nya langsung ke stdout.
-          BUILD_VERSION=$(godot --version 2>&1 | tr -d '[:space:]' | head -c 60)
-          # Validasi: harus mengandung "stable" (bukan kosong/error)
-          if echo "${BUILD_VERSION}" | grep -q "stable"; then
-            echo "✅ Build version dari binary: ${BUILD_VERSION}"
-          else
-            # Fallback manual: extract dari startup banner
-            BUILD_VERSION=$(timeout 5 godot --headless --quit 2>&1 \
-              | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.stable\.official\.[a-f0-9]+' \
-              | head -1)
-            echo "⚠ Fallback version: ${BUILD_VERSION}"
-          fi
-          echo "${BUILD_VERSION}" > android/build/.build_version
-          echo "--- .build_version content ---"
-          cat android/build/.build_version
-          echo "✅ Android build template terpasang"
-          ls android/build/ | head -10
-
       - name: Import project resources
         run: |
           mkdir -p build
           timeout 60 godot --headless --import --path . 2>&1 || true
           echo "Import done"
 
-      - name: Export Android AAB (release)
+      - name: Export Android APK (release)
         run: |
-          godot --headless --export-release "Android" "build/${EXPORT_NAME}.aab" --path . 2>&1
+          godot --headless --export-release "Android" "build/${EXPORT_NAME}.apk" --path . 2>&1
           ls -lh build/ || echo "build/ kosong"
 
-      - name: Upload AAB artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.EXPORT_NAME }}-android-aab
-          path: build/${{ env.EXPORT_NAME }}.aab
+          name: ${{ env.EXPORT_NAME }}-android-release
+          path: build/${{ env.EXPORT_NAME }}.apk
           if-no-files-found: error
           retention-days: 30
