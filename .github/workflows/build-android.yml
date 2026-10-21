@@ -130,9 +130,22 @@ jobs:
           touch android/build/.gdignore
           # Buat .build_version — Godot mengecek file ini untuk verifikasi template cocok
           # dengan versi engine. Tanpa file ini export gagal dengan "no version info".
-          BUILD_VERSION=$(godot --version --headless 2>/dev/null || echo "${GODOT_VERSION}.${GODOT_RELEASE}")
-          echo "${BUILD_VERSION}" | tr -d '[:space:]' > android/build/.build_version
-          echo "✅ Android build template terpasang (versi: ${BUILD_VERSION})"
+          # Gunakan `godot --version` (tanpa --headless) yang output-nya langsung ke stdout.
+          BUILD_VERSION=$(godot --version 2>&1 | tr -d '[:space:]' | head -c 60)
+          # Validasi: harus mengandung "stable" (bukan kosong/error)
+          if echo "${BUILD_VERSION}" | grep -q "stable"; then
+            echo "✅ Build version dari binary: ${BUILD_VERSION}"
+          else
+            # Fallback manual: extract dari startup banner
+            BUILD_VERSION=$(timeout 5 godot --headless --quit 2>&1 \
+              | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.stable\.official\.[a-f0-9]+' \
+              | head -1)
+            echo "⚠ Fallback version: ${BUILD_VERSION}"
+          fi
+          echo "${BUILD_VERSION}" > android/build/.build_version
+          echo "--- .build_version content ---"
+          cat android/build/.build_version
+          echo "✅ Android build template terpasang"
           ls android/build/ | head -10
 
       - name: Import project resources
