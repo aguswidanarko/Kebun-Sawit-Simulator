@@ -112,6 +112,25 @@ jobs:
           sed -i "s|keystore/release_password=\"\"|keystore/release_password=\"${RELEASE_KEYSTORE_PASS}\"|" export_presets.cfg
           grep "keystore/release" export_presets.cfg | head -3
 
+      # Install Android build template ke project (wajib saat use_gradle_build=true).
+      # android_source.zip sudah ada di dalam templates.tpz yang didownload di atas —
+      # tinggal diekstrak ke android/build/ supaya Godot bisa jalankan gradle export.
+      - name: Install Android build template
+        run: |
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          SRC="${TEMPLATE_DIR}/android_source.zip"
+          if [ ! -f "${SRC}" ]; then
+            echo "❌ android_source.zip tidak ada di ${TEMPLATE_DIR}"
+            ls "${TEMPLATE_DIR}/" | head -20
+            exit 1
+          fi
+          mkdir -p android/build
+          unzip -q "${SRC}" -d android/build/
+          # Buat .gdignore agar Godot tidak mencoba import file Java/Kotlin/Gradle
+          touch android/build/.gdignore
+          echo "✅ Android build template terpasang"
+          ls android/build/ | head -10
+
       - name: Import project resources
         run: |
           mkdir -p build
