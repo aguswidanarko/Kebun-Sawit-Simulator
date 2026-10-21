@@ -128,7 +128,11 @@ jobs:
           unzip -q "${SRC}" -d android/build/
           # Buat .gdignore agar Godot tidak mencoba import file Java/Kotlin/Gradle
           touch android/build/.gdignore
-          echo "✅ Android build template terpasang"
+          # Buat .build_version — Godot mengecek file ini untuk verifikasi template cocok
+          # dengan versi engine. Tanpa file ini export gagal dengan "no version info".
+          BUILD_VERSION=$(godot --version --headless 2>/dev/null || echo "${GODOT_VERSION}.${GODOT_RELEASE}")
+          echo "${BUILD_VERSION}" | tr -d '[:space:]' > android/build/.build_version
+          echo "✅ Android build template terpasang (versi: ${BUILD_VERSION})"
           ls android/build/ | head -10
 
       - name: Import project resources
