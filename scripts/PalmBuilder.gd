@@ -37,6 +37,12 @@ static var _cached: PackedScene
 static var _seedling_cached: Mesh
 static var _asset_cache := {}   # path(String) -> PackedScene
 static var _asset_height_cache := {}   # path(String) -> float (m)
+## Offset dudukan ke y=0 per path. Semua instance dari PackedScene yang sama
+## punya geometri identik, jadi AABB-nya juga identik — cukup dihitung SEKALI.
+## Tanpa cache ini _local_aabb() menelusuri seluruh pohon node untuk tiap-tiap
+## instance; di FarmWorld3D (8x8 = 64 pokok, model TM ~5 MB) itu 64x penelusuran
+## penuh dan jadi penyebab loading "Jelajahi Kebun" memakan puluhan detik di HP.
+static var _asset_ground_cache := {}   # path(String) -> float (offset y)
 
 ## Instance sebuah model tahap dedicated (glb) apa adanya, hanya didudukkan ke
 ## tanah (y=0) — skalanya sudah benar (meter asli) dari pembuat aset.
@@ -44,7 +50,11 @@ static func build_asset_stage(path: String) -> Node3D:
 	var root := Node3D.new()
 	var ps := _load_asset(path)
 	if ps:
-		root.add_child(_ground(ps.instantiate()))
+		var inst: Node3D = ps.instantiate()
+		if not _asset_ground_cache.has(path):
+			_asset_ground_cache[path] = _local_aabb(inst).position.y
+		inst.position.y -= float(_asset_ground_cache[path])
+		root.add_child(inst)
 	return root
 
 ## Pilih aset dedicated sesuai umur pokok lapangan (tahun) — dipakai scene yang
