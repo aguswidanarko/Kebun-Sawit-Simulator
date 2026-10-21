@@ -106,7 +106,7 @@ func _make_header() -> Control:
 	v.add_child(spacer)
 
 	# Bottom: kicker + judul
-	var b_name := GameState.active_block().get("id", "B1")
+	var b_name: String = String(GameState.active_block().get("id", "B1"))
 	v.add_child(UIKit.kicker("TUGAS LAPANGAN", Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.85)))
 	v.add_child(UIKit.label("Blok %s · 1 ha" % b_name, 26, UIKit.BG, 800))
 	return hdr

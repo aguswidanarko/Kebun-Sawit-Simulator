@@ -39,7 +39,7 @@ func _build() -> void:
 	for entry in TABS:
 		var tid: String = entry[0]
 		var tlabel: String = entry[1]
-		var active := (_active_tab == tid)
+		var active: bool = (_active_tab == tid)
 		var b := Button.new()
 		b.text = tlabel
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -76,7 +76,7 @@ func _build() -> void:
 func _rebuild_tabs() -> void:
 	for tid in _tab_btns:
 		var b: Button = _tab_btns[tid]
-		var active := (_active_tab == tid)
+		var active: bool = (_active_tab == tid)
 		b.add_theme_font_override("font", UIKit.bold() if active else UIKit.semi())
 		b.add_theme_color_override("font_color", UIKit.INK if active else UIKit.N600)
 		var tsb := UIKit.box(Color(0, 0, 0, 0),
@@ -131,6 +131,6 @@ func _row(rank: int, e: Dictionary) -> PanelContainer:
 	h.add_child(v)
 	var profit := int(e.get("profit", 0))
 	var diff_col_map := {"sulit": UIKit.ACCENT_700, "krisis": UIKit.ACCENT_700}
-	var pcol := diff_col_map.get(diff_str, UIKit.ACCENT_700) if profit >= 0 else UIKit.N600
+	var pcol: Color = diff_col_map.get(diff_str, UIKit.ACCENT_700) if profit >= 0 else UIKit.N600
 	h.add_child(UIKit.label("Rp%s" % GameState._fmt(profit), 13, pcol, 800))
 	return card

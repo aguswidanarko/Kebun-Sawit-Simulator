@@ -1015,7 +1015,7 @@ func _build_tutorial_step() -> void:
 
 	var card := PanelContainer.new()
 	card.add_theme_stylebox_override("panel", UIKit.box(UIKit.BG, UIKit.INK, 2, 0))
-	card.set_anchors_preset(Control.PRESET_CENTER_WIDE)
+	card.set_anchors_preset(Control.PRESET_HCENTER_WIDE)
 	card.offset_left = 24; card.offset_right = -24
 	card.offset_top = -160; card.offset_bottom = 160
 	card_host.add_child(card)
@@ -1031,7 +1031,7 @@ func _build_tutorial_step() -> void:
 	v.add_theme_constant_override("separation", 12)
 	m.add_child(v)
 
-	var step := _TUTORIAL_STEPS[_tutorial_idx]
+	var step: Dictionary = _TUTORIAL_STEPS[_tutorial_idx]
 
 	# Header: ikon + kicker + judul
 	var hrow := HBoxContainer.new()
