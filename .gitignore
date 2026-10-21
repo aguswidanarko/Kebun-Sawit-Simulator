@@ -17,6 +17,11 @@ keystore.properties
 .DS_Store
 Thumbs.db
 
+# File kunci Microsoft Office. Muncul saat .rules/.md/.docx dibuka di Word —
+# Word menamainya dengan mengganti 2 huruf pertama, mis. firestore.rules
+# menghasilkan "~$restore.rules". Isinya nama pengguna, bukan data proyek.
+~$*
+
 # Build output
 build/
 *.apk

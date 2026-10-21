@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Kebun Sawit Simulator — Firestore Security Rules
+// Sumber kebenaran untuk rules proyek ini. JANGAN edit langsung di Firebase
+// Console; edit file ini, lalu copy-paste / deploy (lihat docs/FIREBASE_SECURITY.md).
+//
+// Model keamanan singkat:
+//   - Setiap pemain punya 1 (satu) dokumen saja, ID dokumen = Firebase Auth UID
+//     dari anonymous sign-in. Klien tidak bisa memilih UID-nya sendiri, jadi
+//     tidak bisa menulis/menimpa entri pemain lain.
+//   - Skor hanya boleh NAIK (monotonic). Ini sekaligus jadi rate limiter alami:
+//     submit ulang dengan profit sama/lebih kecil ditolak server.
+//   - Baca hanya lewat query ber-limit, supaya koleksi tidak bisa di-dump habis
+//     (biaya egress).
+//   - Rules TIDAK bisa memverifikasi bahwa profit benar-benar hasil bermain.
+//     Hanya backend otoritatif (Cloud Function) yang bisa. Lihat bagian
+//     "Batasan yang disadari" di docs/FIREBASE_SECURITY.md.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /hall_of_fame_profit/{uid} {
+
+      // Hanya pemilik dokumen (UID-nya sendiri) yang boleh menulis ke path ini.
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      // last_write dikirim klien, jadi TIDAK bisa dipercaya sebagai waktu pasti.
+      // Dicek sekadar agar nilainya masuk akal (tidak 1970, tidak tahun 3000).
+      function saneTimestamp(ts) {
+        return ts is timestamp
+          && ts > request.time - duration.value(1, 'd')
+          && ts < request.time + duration.value(1, 'd');
+      }
+
+      function validEntry() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['kebun_name', 'profile_id', 'profit', 'day', 'last_write'])
+          && d.keys().size() == 5
+          && d.kebun_name is string && d.kebun_name.size() > 0 && d.kebun_name.size() <= 40
+          && d.profile_id is string && d.profile_id.size() > 0 && d.profile_id.size() <= 40
+          && d.profit is int && d.profit >= 0 && d.profit <= 1000000000000
+          && d.day is int && d.day >= 1 && d.day <= 100000
+          && saneTimestamp(d.last_write);
+      }
+
+      // --- Baca ---
+      // get: hanya dokumen sendiri (tidak dipakai klien, tapi ditutup rapat).
+      allow get: if isOwner();
+      // list: wajib login + wajib pakai limit. Query tanpa limit otomatis ditolak
+      // (perbandingan terhadap nilai kosong -> error -> deny). Angka 50 harus
+      // sama dengan MAX_FETCH_LIMIT di autoload/LeaderboardManager.gd.
+      allow list: if request.auth != null && request.query.limit <= 50;
+
+      // --- Tulis ---
+      allow create: if isOwner() && validEntry();
+      allow update: if isOwner() && validEntry()
+        && request.resource.data.profit > resource.data.profit;
+      allow delete: if false;
+    }
+
+    // Tutup semua path lain secara eksplisit.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
