@@ -28,8 +28,8 @@ jobs:
           SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
           yes | ${SDKMANAGER} --sdk_root="${ANDROID_SDK_ROOT}" \
             "ndk;23.2.8568313" \
-            "build-tools;36.0.0" \
-            "platforms;android-36" 2>/dev/null || true
+            "build-tools;34.0.0" \
+            "platforms;android-34" 2>/dev/null || true
           echo "NDK path: ${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
           ls "${ANDROID_SDK_ROOT}/ndk/" || echo "NDK not installed, trying alternative"
 
