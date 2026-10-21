@@ -8,7 +8,7 @@ Lengkapi nama pembuat dari halaman Sketchfab (kolom "Author") sebelum publikasi.
 
 | Aset | Dipakai sebagai | Sumber | Lisensi |
 |------|-----------------|--------|---------|
-| **Oil fruit palm** | Pohon sawit (`assets/models/palm/oil_palm.glb`) | https://sketchfab.com/3d-models/oil-fruit-palm-6afff2461fba466e8cfb735661ddf93f | CC-BY* (cek halaman — WAJIB atribusi pembuat) |
+| **Oil fruit palm** oleh **Aziz.Sisi.Akafomo** | Pohon sawit (`assets/models/palm/oil_palm.glb`) | https://sketchfab.com/3d-models/oil-fruit-palm-6afff2461fba466e8cfb735661ddf93f | **CC-BY** ✅ (dikonfirmasi — wajib cantumkan nama "Aziz.Sisi.Akafomo" di layar kredit) |
 | **Stylized Nature MegaKit** (Quaternius) | Rumput/semak (gulma), pohon latar, jalan batu (`assets/models/nature/`) | https://quaternius.com | **CC0** (bebas, tanpa atribusi) |
 | **Karakter "Animated Human"** (Quaternius) | Pemain di dunia 3D (`assets/models/character/human.glb`) | https://poly.pizza/m/c3Ibh9I3udk | **CC0** (rigged + animasi Idle/Walk/Run/Working) |
 | **Tekstur tanah "aerial_grass_rock"** (Poly Haven) | Ground dunia 3D (`assets/textures/ground_*.jpg`) | https://polyhaven.com/a/aerial_grass_rock | **CC0** |
@@ -42,8 +42,7 @@ Lengkapi nama pembuat dari halaman Sketchfab (kolom "Author") sebelum publikasi.
 | **Motor Trail Kebun** (`assets/models/vehicle/motor_trail.obj` + `.mtl`) | Model item `trail` (kategori `kendaraan`) di `data/merchant_inventory_start.json`, field `model` | Dibuat/ditambahkan pemilik proyek (`Asset/Asset baru/motor-trail.obj`) | Milik proyek. `.mtl` asli hilang, dibuatkan ulang (`aluminium`/`black_plastic`/`engine_grey`/`orange_plastic`/`rubber`, flat color). Model motor trail lengkap (85 part: roda, suspensi, rangka, mesin, knalpot, radiator) — menggantikan kandidat Sketchfab CC-BY "KTM Dirt Bike" yang direkomendasikan sebelumnya. |
 | **Kenney Interface Sounds** (9 file dipilih dari 100, `assets/audio/sfx/*.wav`) | Efek suara UI/gameplay (`autoload/SoundManager.gd`): klik tombol, dapat/keluar uang, toast, buka/tutup sheet, ganti tab, TBS jatuh, gejala hama | Dikemas ulang utk Godot oleh kontributor Godot (Calinou): https://github.com/Calinou/kenney-interface-sounds — asli dari https://kenney.nl/assets/interface-sounds | **CC0** (lihat `assets/audio/sfx/LICENSE.txt`, atribusi tidak wajib tapi dicatat di sini) |
 
-\* Konfirmasi lisensi & nama pembuat "Oil fruit palm" dari halaman Sketchfab. Jika ternyata
-bukan CC-BY/CC0 yang mengizinkan pemakaian ini, ganti modelnya.
+✅ Lisensi & nama pembuat "Oil fruit palm" dikonfirmasi: **Aziz.Sisi.Akafomo**, CC-BY — boleh komersial dengan atribusi.
 
 ⚠️ Foto hama/penyakit CC-BY-SA punya klausul **ShareAlike**: kalau foto ini dipotong/diedit lalu
 didistribusikan ulang sebagai aset game, salinan yang diedit itu harus tetap dilisensikan

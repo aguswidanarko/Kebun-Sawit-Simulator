@@ -38,7 +38,7 @@ const BASE_URL := "https://firestore.googleapis.com/v1/projects/%s/databases/(de
 ## GameState.maybe_record_hall_of_fame() terlepas dari hasil ini).
 func submit_score(profit: int) -> void:
 	var entry := {
-		"kebun_name": GameState.display_kebun_name(),
+		"kebun_name": GameState.display_player_name(),
 		"profile_id": GameState.profile_id,
 		"profit": profit,
 		"day": GameState.day,

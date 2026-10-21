@@ -25,9 +25,10 @@ func _ready() -> void:
 	GameState.blocks_changed.connect(_refresh)
 	GameState.cosmetics_changed.connect(_refresh)
 	GameState.break_even_achieved.connect(_on_break_even)
-	# Tutorial pertama kali masuk dashboard
-	if not GameState.tutorial_shown:
-		call_deferred("_show_tutorial")
+	# Tutorial pertama kali masuk dashboard — hanya muncul jika ada lahan (bukan layar kosong awal).
+	# Delay 0.2s agar layout selesai dihitung dulu sebelum overlay ditampilkan.
+	if not GameState.tutorial_shown and not GameState.plots.is_empty():
+		get_tree().create_timer(0.2).timeout.connect(_show_tutorial)
 	# Cek apakah break-even sudah dicapai tapi belum ditampilkan (kalau player ada di scene lain saat break-even)
 	call_deferred("_check_pending_breakeven")
 	if OS.get_cmdline_user_args().has("shotdash"):
@@ -146,6 +147,7 @@ func _header() -> Control:
 	kname_label = UIKit.label("", 26, UIKit.BG, 800)
 	tl.add_child(kname_label)
 	top.add_child(tl)
+	top.add_child(_icon_btn("user", func(): get_tree().change_scene_to_file("res://scenes/ProfileScreen.tscn")))
 	top.add_child(_icon_btn("shirt", func(): get_tree().change_scene_to_file("res://scenes/CharacterCustomization.tscn")))
 	top.add_child(_icon_btn("shopping-bag", func(): get_tree().change_scene_to_file("res://scenes/CosmeticShop.tscn")))
 	top.add_child(_icon_btn("star", func(): get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn")))
@@ -949,27 +951,27 @@ const _TUTORIAL_STEPS := [
 	{
 		"title": "Dashboard Kebun",
 		"body": "Ini pusat kendali kebun Anda. Di sini Anda bisa memantau saldo, cuaca, TBS siap panen, dan kondisi setiap blok lahan.",
-		"icon": "dashboard"
+		"icon": "layout-grid"
 	},
 	{
 		"title": "Strip Statistik",
 		"body": "Saldo kebun, kondisi cuaca hari ini, dan estimasi TBS yang siap dipanen. Tap area Cuaca untuk melihat prakiraan, tap TBS untuk langsung ke layar Panen.",
-		"icon": "timbangan"
+		"icon": "file-text"
 	},
 	{
 		"title": "Maju Hari",
 		"body": "Tap 'Lanjut 1 hari' untuk maju satu hari, atau 'Lanjut 15 hari' untuk loncat. Waktu memengaruhi pertumbuhan gulma, hama, dan kematangan TBS.",
-		"icon": "naik"
+		"icon": "fast-forward"
 	},
 	{
 		"title": "Panel Pembibitan",
 		"body": "Kelola siklus pembibitan 12 bulan — dari pesan kecambah, Pre Nursery, hingga bibit siap tanam. Bibit sendiri jauh lebih murah dari beli jadi.",
-		"icon": "daun"
+		"icon": "sprout"
 	},
 	{
 		"title": "Peta Blok 3×3",
 		"body": "Tap blok untuk melihat detail dan mengambil tindakan: pupuk, semprot gulma, tangani hama, atau panen. Blok merah = ada masalah yang perlu ditangani.",
-		"icon": "penilaian"
+		"icon": "flag"
 	},
 	{
 		"title": "Tugas Lapangan",
@@ -978,8 +980,8 @@ const _TUTORIAL_STEPS := [
 	},
 	{
 		"title": "Icon Atas",
-		"body": "👕 Kostum karakter · 🛍 Toko kosmetik · ⭐ Hall of Fame · 🛒 Top-up modal · ☰ Menu utama. Semuanya bisa diakses kapan saja dari header.",
-		"icon": "setelan"
+		"body": "👤 Profil · 👕 Kostum karakter · 🛍 Toko kosmetik · ⭐ Hall of Fame · 🛒 Top-up modal · ☰ Menu utama. Semuanya bisa diakses kapan saja dari header.",
+		"icon": "settings"
 	},
 ]
 
@@ -988,7 +990,8 @@ var _tutorial_overlay: CanvasLayer
 
 func _show_tutorial() -> void:
 	GameState.tutorial_shown = true
-	GameState.save_game()
+	# Jangan save_game() di sini — demo mode tidak boleh menimpa save asli.
+	# Save akan dilakukan otomatis saat user maju hari atau keluar ke menu.
 	_tutorial_idx = 0
 	_build_tutorial_step()
 

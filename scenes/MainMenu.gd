@@ -374,8 +374,9 @@ func _make_button_zone() -> Control:
 		get_tree().change_scene_to_file("res://scenes/DashboardScreen.tscn"),
 		"secondary", 14, 48))
 
-	v.add_child(UIKit.btn("Jelajahi kebun 3D",
-		func(): get_tree().change_scene_to_file("res://scenes/world/FarmWorld3D.tscn"),
+	v.add_child(UIKit.btn("Jelajahi kebun 3D", func():
+		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
+		get_tree().change_scene_to_file("res://scenes/world/FarmWorld3D.tscn"),
 		"secondary", 14, 48))
 
 	v.add_child(UIKit.btn("🌴 Siklus Tanaman Kelapa Sawit", func():

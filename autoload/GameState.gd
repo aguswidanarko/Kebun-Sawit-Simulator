@@ -62,6 +62,9 @@ var cosmetics_applied: Dictionary = {} # kategori -> id yang dipakai
 var purchase_history: Array = []       # [{product_id, sandbox, day, grant_rp}, ...] — riwayat/nota
 # --- Kunjungan (multiplayer asinkron) ---
 var visiting: Dictionary = {}          # snapshot kebun yang sedang dikunjungi (kosong = main sendiri)
+# --- Identitas Pemain ---
+var user_name: String = ""             # nama pemain (ditampilkan di leaderboard — beda dari nama kebun)
+var user_email: String = ""            # email (opsional, untuk notifikasi Play Store kelak)
 # --- Alur cerita / run-state ---
 var story_flags: Dictionary = {}       # jalur, tipe_lahan, lahan_id, dll (lihat decision_tree.md)
 var land_acquired: bool = false        # lahan sudah dibeli lewat cerita? (jangan tagih lagi di Main)
@@ -77,15 +80,27 @@ func first_planted_index() -> int:
 	return -1
 
 func active_block() -> Dictionary:
+	# Pastikan plots punya 9 slot (bisa kosong kalau game belum dimulai lewat start_new_game).
+	if plots.is_empty():
+		plots = _fresh_plots()
 	var idx := active_plot
 	if idx < 0 or idx >= plots.size() or plots[idx].get("state") != "tanam":
 		idx = first_planted_index()
 	if idx < 0:
 		# Tak ada tanaman -> tanam cepat di plot 0 agar mode lapangan tetap jalan.
+		# Beri modal sementara kalau cash nol agar spend() tidak gagal.
+		var need_cash := cash == 0
+		if need_cash:
+			cash = int(Database.params.get("base_capital_rp", 100000000))
 		plant_plot(0, "marihat_ppks")
-		plots[0]["planting_day"] = day - 5 * 365
+		if need_cash and not plots.is_empty():
+			cash = 0   # kembalikan ke 0 (tidak benar-benar memberi modal)
+		if not plots.is_empty() and plots[0].get("state") == "tanam":
+			plots[0]["planting_day"] = day - 5 * 365
 		idx = 0
 	active_plot = idx
+	if idx < 0 or idx >= plots.size():
+		return {}
 	return plots[idx]
 
 func _fresh_plots() -> Array:
@@ -365,6 +380,8 @@ func start_new_game(pid: String, diff: String = "normal") -> void:
 	blocks = []
 	objectives = _fresh_objectives()
 	kebun_name = "Kebun Saya"
+	user_name = ""
+	user_email = ""
 	cosmetics_owned = Database.free_cosmetic_ids()
 	cosmetics_applied = _default_applied()
 	visiting = {}
@@ -677,10 +694,10 @@ func maybe_record_hall_of_fame() -> void:
 
 	var entries := hall_of_fame_entries()
 
-	# Cek apakah sudah ada entry dengan kebun_name ini (update existing)
+	# Cek apakah sudah ada entry dengan nama pemain ini (update existing)
 	var existing_idx := -1
 	for i in entries.size():
-		if entries[i].get("kebun_name") == display_kebun_name():
+		if entries[i].get("kebun_name") == display_player_name():
 			existing_idx = i
 			break
 
@@ -688,7 +705,7 @@ func maybe_record_hall_of_fame() -> void:
 	var week_num := int((day - 1) / 7) + 1
 
 	var entry := {
-		"kebun_name": display_kebun_name(), "profile_id": profile_id,
+		"kebun_name": display_player_name(), "profile_id": profile_id,
 		"profit": profit, "day": day, "break_even_day": break_even_day,
 		"plots_owned": plots_owned(), "difficulty": difficulty,
 		"week": week_num,
@@ -789,6 +806,11 @@ func applied_emote_anim_key() -> String:
 
 func display_kebun_name() -> String:
 	return ("%s %s" % [kebun_badge(), kebun_name]).strip_edges()
+
+## Nama yang ditampilkan di leaderboard/Hall of Fame: nama user bila diisi, else nama kebun.
+func display_player_name() -> String:
+	var n := user_name.strip_edges()
+	return ("%s %s" % [kebun_badge(), n]).strip_edges() if n != "" else display_kebun_name()
 
 # ---- Kunjungan kebun (multiplayer asinkron via snapshot) ----
 func export_kebun() -> void:
@@ -921,9 +943,10 @@ func age_years_of(block: Dictionary) -> int:
 # --- Save / Load ---
 func save_game() -> void:
 	var data := {
-		"version": 6, "cash": cash, "day": day, "profile_id": profile_id,
+		"version": 7, "cash": cash, "day": day, "profile_id": profile_id,
 		"weather": weather, "blocks": blocks, "objectives": objectives,
-		"kebun_name": kebun_name, "cosmetics_owned": cosmetics_owned,
+		"kebun_name": kebun_name, "user_name": user_name, "user_email": user_email,
+		"cosmetics_owned": cosmetics_owned,
 		"cosmetics_applied": cosmetics_applied,
 		"story_flags": story_flags, "land_acquired": land_acquired, "land_class": land_class,
 		"plots": plots, "inv": inv, "ledger": ledger, "nursery": nursery, "tph": tph,
@@ -956,6 +979,8 @@ func load_game() -> bool:
 	var obj = data.get("objectives", _fresh_objectives())
 	objectives = obj if obj is Dictionary else _fresh_objectives()
 	kebun_name = str(data.get("kebun_name", "Kebun Saya"))
+	user_name = str(data.get("user_name", ""))
+	user_email = str(data.get("user_email", ""))
 	var owned = data.get("cosmetics_owned", Database.free_cosmetic_ids())
 	cosmetics_owned = owned if owned is Array else Database.free_cosmetic_ids()
 	var appl = data.get("cosmetics_applied", _default_applied())

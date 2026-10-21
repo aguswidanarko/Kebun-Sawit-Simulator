@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android AAB
 
 on:
   push:
@@ -13,29 +13,26 @@ env:
 
 jobs:
   build:
-    name: Build Android APK
+    name: Build Android AAB (Release)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Java sudah tersedia di runner — verifikasi saja
       - name: Verify Java
         run: java -version
 
-      # Gunakan SDK yang sudah pre-install di runner (tidak pakai setup-android yang bermasalah)
       - name: Install Android NDK & build-tools via pre-installed sdkmanager
         run: |
           SDKMANAGER="${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager"
           yes | ${SDKMANAGER} --sdk_root="${ANDROID_SDK_ROOT}" \
             "ndk;23.2.8568313" \
-            "build-tools;34.0.0" \
-            "platforms;android-34" 2>/dev/null || true
+            "build-tools;36.0.0" \
+            "platforms;android-36" 2>/dev/null || true
           echo "NDK path: ${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
           ls "${ANDROID_SDK_ROOT}/ndk/" || echo "NDK not installed, trying alternative"
 
-      # Download Godot editor Linux (dijalankan dengan --headless)
       - name: Download Godot ${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
         run: |
           GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
@@ -47,7 +44,6 @@ jobs:
           chmod +x /usr/local/bin/godot
           godot --version
 
-      # Download export templates (berisi android_debug.apk & android_release.apk)
       - name: Download Godot export templates
         run: |
           TEMPLATES_FILE="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
@@ -61,18 +57,40 @@ jobs:
           echo "Templates:"
           ls "${TEMPLATE_DIR}/" | grep -i android
 
-      # Buat debug keystore
-      - name: Generate debug keystore
+      # Setup release keystore dari GitHub Secrets.
+      # Buat 4 secrets di Settings > Secrets > Actions:
+      #   ANDROID_KEYSTORE_BASE64  — output dari: base64 -w0 release.keystore
+      #   ANDROID_KEYSTORE_PASS    — storepass keystore
+      #   ANDROID_KEY_ALIAS        — alias key (mis. "upload")
+      #   ANDROID_KEY_PASS         — keypass (biasanya sama dengan storepass)
+      - name: Setup release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASS }}
         run: |
           mkdir -p "${HOME}/.android"
-          keytool -genkey -v \
-            -keystore "${HOME}/.android/debug.keystore" \
-            -alias androiddebugkey \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=Android Debug,O=Android,C=US"
+          if [ -n "${KEYSTORE_BASE64}" ]; then
+            echo "${KEYSTORE_BASE64}" | base64 -d > "${HOME}/.android/release.keystore"
+            echo "RELEASE_KEYSTORE=${HOME}/.android/release.keystore" >> "$GITHUB_ENV"
+            echo "RELEASE_KEYSTORE_USER=${KEY_ALIAS}" >> "$GITHUB_ENV"
+            echo "RELEASE_KEYSTORE_PASS=${KEYSTORE_PASS}" >> "$GITHUB_ENV"
+            echo "RELEASE_KEY_PASS=${KEY_PASS}" >> "$GITHUB_ENV"
+          else
+            keytool -genkey -v \
+              -keystore "${HOME}/.android/release.keystore" \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+            echo "RELEASE_KEYSTORE=${HOME}/.android/release.keystore" >> "$GITHUB_ENV"
+            echo "RELEASE_KEYSTORE_USER=androiddebugkey" >> "$GITHUB_ENV"
+            echo "RELEASE_KEYSTORE_PASS=android" >> "$GITHUB_ENV"
+            echo "RELEASE_KEY_PASS=android" >> "$GITHUB_ENV"
+            echo "::warning::ANDROID_KEYSTORE_BASE64 secret tidak diset — menggunakan debug keystore. AAB ini TIDAK valid untuk Play Store."
+          fi
 
-      # Tulis Godot editor settings dengan path Android SDK & keystore
       - name: Configure Godot editor settings
         run: |
           mkdir -p "${HOME}/.config/godot"
@@ -81,37 +99,34 @@ jobs:
 
           [resource]
           export/android/android_sdk_path = "${ANDROID_SDK_ROOT}"
-          export/android/debug_keystore = "${HOME}/.android/debug.keystore"
-          export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_pass = "android"
+          export/android/debug_keystore = "${RELEASE_KEYSTORE}"
+          export/android/debug_keystore_user = "${RELEASE_KEYSTORE_USER}"
+          export/android/debug_keystore_pass = "${RELEASE_KEYSTORE_PASS}"
           EOF
           cat "${HOME}/.config/godot/editor_settings-4.tres"
 
-      # Update export_presets.cfg dengan path keystore absolut
-      - name: Inject keystore path into export_presets.cfg
+      - name: Inject release keystore into export_presets.cfg
         run: |
-          sed -i "s|keystore/debug=\"\"|keystore/debug=\"${HOME}/.android/debug.keystore\"|" export_presets.cfg
-          sed -i "s|keystore/debug_user=\"\"|keystore/debug_user=\"androiddebugkey\"|" export_presets.cfg
-          sed -i "s|keystore/debug_password=\"\"|keystore/debug_password=\"android\"|" export_presets.cfg
+          sed -i "s|keystore/release=\"\"|keystore/release=\"${RELEASE_KEYSTORE}\"|" export_presets.cfg
+          sed -i "s|keystore/release_user=\"\"|keystore/release_user=\"${RELEASE_KEYSTORE_USER}\"|" export_presets.cfg
+          sed -i "s|keystore/release_password=\"\"|keystore/release_password=\"${RELEASE_KEYSTORE_PASS}\"|" export_presets.cfg
+          grep "keystore/release" export_presets.cfg | head -3
 
-      # Import project (WAJIB di Godot 4 — import resources sebelum export)
       - name: Import project resources
         run: |
           mkdir -p build
           timeout 60 godot --headless --import --path . 2>&1 || true
           echo "Import done"
 
-      # Export APK
-      - name: Export Android APK (debug)
+      - name: Export Android AAB (release)
         run: |
-          godot --headless --export-debug "Android" "build/${EXPORT_NAME}.apk" --path . 2>&1
+          godot --headless --export-release "Android" "build/${EXPORT_NAME}.aab" --path . 2>&1
           ls -lh build/ || echo "build/ kosong"
 
-      # Upload APK sebagai artifact
-      - name: Upload APK artifact
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.EXPORT_NAME }}-android
-          path: build/${{ env.EXPORT_NAME }}.apk
+          name: ${{ env.EXPORT_NAME }}-android-aab
+          path: build/${{ env.EXPORT_NAME }}.aab
           if-no-files-found: error
           retention-days: 30
