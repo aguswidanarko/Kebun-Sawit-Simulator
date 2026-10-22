@@ -10,7 +10,7 @@ const MAX_RENDER := 63   # representatif, bukan render seluruh qty asli (bisa ri
 
 var _player: CharacterBody3D
 var _cam: Camera3D
-var _joystick
+var _dpad
 var _status: RichTextLabel
 var _stage: Dictionary = {}
 var _cols := 7
@@ -32,8 +32,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _player == null or _cam == null:
 		return
-	if _joystick:
-		_player.joystick = _joystick.output
+	if _dpad:
+		_player.joystick = _dpad.output
 	var target := _player.global_position
 	var desired := target + Vector3(0, 4.5, 8.5)
 	var t: float = 1.0 - exp(-6.0 * delta)
@@ -235,10 +235,10 @@ func _build_hud() -> void:
 	layer.add_child(top)
 	top.add_child(_mk_btn("← Kebun", func(): get_tree().change_scene_to_file("res://scenes/DashboardScreen.tscn")))
 
-	_joystick = load("res://scenes/world/VirtualJoystick.gd").new()
-	_joystick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_joystick.position = Vector2(30, -230)
-	layer.add_child(_joystick)
+	# D-pad sentuh kiri bawah (pengganti VirtualJoystick — lihat TouchDPad.gd)
+	_dpad = load("res://scenes/world/TouchDPad.gd").new()
+	layer.add_child(_dpad)
+	_dpad.anchor_bottom_left(18, 24)
 
 func _mk_btn(text: String, cb: Callable) -> Button:
 	var b := Button.new(); b.text = text

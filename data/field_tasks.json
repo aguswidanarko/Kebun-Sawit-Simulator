@@ -1,5 +1,7 @@
 {
-  "_catatan": "Mini-game simulator lapangan. mech: hold | timing | targets. zone = rentang 0..1 yang dihitung \"Tepat\". at = posisi titik tugas di peta mini blok (0..1). hk_delegate = HK bila ditugaskan ke tim (dibagi speed profil). Bintang: hold/timing -> hits/rounds >=0.8 => 3, >=0.5 => 2, else 1; targets -> akurasi (hits-misses)/valid >=0.99 & <25 dtk => 3, >=0.6 => 2, else 1. Tim = selalu 2 bintang.",
+  "_catatan": "Mini-game simulator lapangan. mech: hold | timing | targets | catch. zone = rentang 0..1 yang dihitung \"Tepat\". at = posisi titik tugas di peta mini blok (0..1). hk_delegate = HK bila ditugaskan ke tim (dibagi speed profil). bg = latar belakang minigame. requires = syarat aktif: none | land_or_nursery | tm | nursery. deny_msg = prompt saat syarat tak terpenuhi. reward_eligible = ikut hitungan bonus 7 minigame. Bintang: hold/timing -> hits/rounds >=0.8 => 3, >=0.5 => 2, else 1; targets -> akurasi (hits-misses)/valid >=0.99 & <25 dtk => 3, >=0.6 => 2, else 1; catch -> akurasi tangkapan. Tim = selalu 2 bintang.",
+  "reward_per_star_rp": { "1": 15000, "2": 30000, "3": 50000 },
+  "all_tasks_bonus_rp": 100000,
   "tasks": [
     {
       "id": "semprot",
@@ -7,14 +9,12 @@
       "verb": "Semprot",
       "mech": "hold",
       "rounds": 5,
-      "zone": [
-        0.6,
-        0.8
-      ],
-      "at": [
-        0.24,
-        0.34
-      ],
+      "zone": [0.6, 0.8],
+      "at": [0.24, 0.34],
+      "bg": "res://assets/bg/tasks/task_semprot.jpg",
+      "requires": "land_or_nursery",
+      "deny_msg": "Belum ada lahan atau pembibitan, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
       "help": "Tahan tombol untuk menyemprot satu piringan. Lepas saat dosis masuk zona. Tangki 15 L.",
       "worker": "Siti · Penyemprot",
       "hk_delegate": 0.5
@@ -25,15 +25,13 @@
       "verb": "Tabur",
       "mech": "timing",
       "rounds": 5,
-      "zone": [
-        0.42,
-        0.6
-      ],
+      "zone": [0.42, 0.6],
       "speed": 0.024,
-      "at": [
-        0.28,
-        0.7
-      ],
+      "at": [0.28, 0.7],
+      "bg": "res://assets/bg/tasks/task_pupuk.jpg",
+      "requires": "land_or_nursery",
+      "deny_msg": "Belum ada lahan atau pembibitan, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
       "help": "Tap saat jarum takaran di zona 2 kg/pokok.",
       "worker": "Udin · Pemupuk",
       "hk_delegate": 0.5
@@ -44,57 +42,96 @@
       "verb": "Potong",
       "mech": "timing",
       "rounds": 5,
-      "zone": [
-        0.62,
-        0.74
-      ],
+      "zone": [0.62, 0.74],
       "speed": 0.032,
-      "at": [
-        0.74,
-        0.26
-      ],
+      "at": [0.74, 0.26],
+      "bg": "res://assets/bg/tasks/task_panen.jpg",
+      "requires": "tm",
+      "deny_msg": "Tidak ada areal TM, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
       "help": "Tap saat egrek tepat di tangkai tandan matang.",
       "worker": "Joko · Pemanen",
       "hk_delegate": 1
     },
     {
       "id": "angkut",
-      "name": "Angkut ke TPH",
-      "verb": "Angkut",
-      "mech": "targets",
-      "at": [
-        0.5,
-        0.94
-      ],
-      "help": "Muat semua TBS matang & brondolan ke angkong. Jangan muat tandan mentah.",
+      "name": "Angkut TBS ke TPH",
+      "verb": "Naikkan",
+      "mech": "hold",
+      "rounds": 5,
+      "zone": [0.62, 0.82],
+      "at": [0.5, 0.94],
+      "bg": "res://assets/bg/tasks/task_angkut.jpg",
+      "requires": "tm",
+      "deny_msg": "Tidak ada areal TM, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
+      "help": "Tahan tombol untuk menaikkan buah ke truk. Lepas saat muatan pas — jangan sampai berlebih.",
       "worker": "Rudi · Pengangkut",
-      "hk_delegate": 0.5
+      "hk_delegate": 0.5,
+      "hold_labels": { "top": "MUATAN BERLEBIH", "bottom": "BAK MASIH KOSONG", "unit": "% kapasitas bak" }
     },
     {
       "id": "inspeksi",
       "name": "Inspeksi hama",
-      "verb": "Periksa",
-      "mech": "targets",
-      "at": [
-        0.76,
-        0.62
-      ],
-      "help": "Baca kondisi tiap pokok. Tap hanya pokok yang menunjukkan gejala.",
+      "verb": "Tangkap",
+      "mech": "catch",
+      "at": [0.76, 0.62],
+      "bg": "res://assets/bg/tasks/task_inspeksi.jpg",
+      "requires": "land_or_nursery",
+      "deny_msg": "Belum ada lahan atau pembibitan, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
+      "help": "Tap untuk menangkap 5 hama yang bergerak. Jangan tangkap burung hantu atau ayam — keduanya predator alami yang menguntungkan.",
       "worker": "Mandor Hasan",
-      "hk_delegate": 0.25
+      "hk_delegate": 0.25,
+      "catch": {
+        "need": 5,
+        "duration": 35,
+        "_catatan_ikon": "Semua ikon dirender dari model .glb ke PNG transparan (tools/render_sprites.gd), bukan foto .jpg — foto berlatar putih terlihat seperti kartu kotak di layar.",
+        "pests": [
+          { "label": "Ulat api", "img": "res://assets/pests/ikon_ulat_api.png" },
+          { "label": "Rayap", "img": "res://assets/pests/ikon_rayap.png" },
+          { "label": "Kumbang", "img": "res://assets/pests/ikon_kumbang.png" },
+          { "label": "Monyet", "img": "res://assets/pests/ikon_monyet.png" },
+          { "label": "Belalang", "img": "res://assets/pests/ikon_belalang.png" },
+          { "label": "Landak", "img": "res://assets/pests/ikon_landak.png" }
+        ],
+        "avoid": [
+          { "label": "Burung hantu", "img": "res://assets/pests/burung_hantu.png" },
+          { "label": "Ayam", "img": "res://assets/pests/ayam.png" }
+        ]
+      }
     },
     {
       "id": "tanam",
       "name": "Tanam kecambah",
       "verb": "Tanam",
       "mech": "targets",
-      "at": [
-        0.5,
-        0.5
-      ],
+      "rounds": 5,
+      "at": [0.5, 0.5],
+      "bg": "res://assets/bg/tasks/task_tanam.jpg",
+      "requires": "nursery",
+      "deny_msg": "Tidak ada areal pembibitan, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
       "help": "Tap setiap ajir (titik tanam). Hindari batu, genangan, tunggul.",
       "worker": "Udin · Penanam",
       "hk_delegate": 1
+    },
+    {
+      "id": "transplanting",
+      "name": "Transplanting PN ke MN",
+      "verb": "Pindahkan",
+      "mech": "hold",
+      "rounds": 5,
+      "zone": [0.58, 0.78],
+      "at": [0.38, 0.5],
+      "bg": "res://assets/bg/tasks/task_transplanting.jpg",
+      "requires": "nursery",
+      "deny_msg": "Tidak ada areal pembibitan, tugas tidak bisa dilakukan",
+      "reward_eligible": true,
+      "help": "Tahan tombol untuk mengangkat bibit dari Pre Nursery dan memindahkannya ke polybag Main Nursery. Lepas saat kedalaman tanam pas.",
+      "worker": "Siti · Penyemai",
+      "hk_delegate": 1,
+      "hold_labels": { "top": "TERLALU DALAM", "bottom": "AKAR MASIH TERANGKAT", "unit": "% kedalaman tanam" }
     },
     {
       "id": "buka",
@@ -102,19 +139,18 @@
       "verb": "Tebas",
       "mech": "hold",
       "rounds": 4,
-      "zone": [
-        0.7,
-        0.88
-      ],
-      "at": [
-        0.5,
-        0.5
-      ],
+      "zone": [0.7, 0.88],
+      "at": [0.5, 0.5],
+      "bg": "res://assets/bg/tasks/peta_blok.jpg",
+      "requires": "none",
+      "reward_eligible": false,
       "help": "Tahan untuk menebas. Lepas di zona sebelum mesin terlalu panas.",
       "worker": "Tim tebas (3 orang)",
-      "hk_delegate": 2
+      "hk_delegate": 2,
+      "hold_labels": { "top": "MESIN PANAS", "bottom": "BELUM TERTEBAS", "unit": "% putaran mesin" }
     }
   ],
+  "map_bg": "res://assets/bg/tasks/peta_blok.jpg",
   "inspection_symptoms": {
     "ulat_api": [
       "Daun berlubang",

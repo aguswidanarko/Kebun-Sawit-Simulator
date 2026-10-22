@@ -248,6 +248,113 @@ static func labor_hk(activity: String, area: float) -> float:
 static func labor_cost(activity: String, area: float) -> int:
 	return int(round(labor_hk(activity, area) * float(Database.params.get("daily_wage_rp", 120000))))
 
+# ======================================================================
+# Jadwal pemupukan BULANAN (data/fertilizer_schedule.json)
+# ----------------------------------------------------------------------
+# Berbeda dari fertilizer_plan() yang memakai norma per-TAHUN: jadwal ini
+# menentukan bulan ke berapa memupuk dan jenis apa, sesuai dokumen
+# "rekomendasi pemupukan.xlsx". Dosis = GRAM PER POKOK per aplikasi.
+# ======================================================================
+
+## Pupuk higroskopis (bersifat asam) — tidak boleh dicampur dengan golongan
+## fosfat/basa di bawah. Lihat catatan agronomi di Catatan Perbaikan.
+const HYGROSCOPIC := ["Urea", "MOP"]
+const PHOSPHATE_ALKALINE := ["RPH", "Dolomit", "HGFB"]
+
+## Umur blok dalam bulan (1 bulan = 30 hari, konsisten dgn kolom Hari sheet).
+static func block_age_months(block: Dictionary) -> int:
+	return int(floor(float(GameState.day - int(block.get("planting_day", GameState.day))) / 30.0))
+
+## Tahun tanam ke berapa untuk bulan tertentu (bulan 1-12 = tahun 1, dst).
+static func plant_year_of_month(bulan: int) -> int:
+	return maxi(1, int(ceil(float(bulan) / 12.0)))
+
+## Jumlah pokok di satu blok.
+static func palms_of(block: Dictionary) -> int:
+	var per_ha := int(Database.fertilizer_schedule.get("palms_per_ha", 143))
+	return int(round(per_ha * float(block.get("area_ha", 1.0))))
+
+## Rencana pemupukan untuk SATU bulan terjadwal di satu blok.
+## Mengembalikan {} kalau bulan itu tidak ada jadwalnya.
+static func monthly_fert_plan(block: Dictionary, bulan: int) -> Dictionary:
+	var dose: Dictionary = Database.fert_schedule_month(bulan)
+	if dose.is_empty():
+		return {}
+	var palms := palms_of(block)
+	var comps: Array = []
+	var total := 0.0
+	for code in dose:
+		var g_per_palm := float(dose[code])
+		var kg_total := g_per_palm / 1000.0 * float(palms)
+		var price := _fert_price(String(code))
+		var cost := kg_total * price
+		total += cost
+		comps.append({
+			"code": code, "g_per_palm": g_per_palm,
+			"kg_total": kg_total, "price_per_kg": price, "cost": cost })
+	comps.sort_custom(func(a, b): return String(a["code"]) < String(b["code"]))
+	return {
+		"bulan": bulan, "palms": palms, "components": comps,
+		"total_cost": int(round(total)),
+		"warning": mixing_warning(dose.keys()) }
+
+## Bulan-bulan berjadwal yang SUDAH LEWAT tapi belum dipupuk, dalam tahun
+## tanam yang sama dengan bulan sekarang.
+static func missed_fert_months(block: Dictionary) -> Array:
+	var now_m := block_age_months(block)
+	var this_year := plant_year_of_month(now_m)
+	var done: Array = block.get("fert_months_done", [])
+	var out: Array = []
+	for e in Database.fertilizer_schedule.get("schedule", []):
+		var b := int(e.get("bulan", -1))
+		if b <= 0 or b > now_m:
+			continue
+		if plant_year_of_month(b) != this_year:
+			continue
+		if not done.has(b):
+			out.append(b)
+	out.sort()
+	return out
+
+## Catat bahwa blok sudah dipupuk untuk bulan tertentu.
+static func mark_fert_month(block: Dictionary, bulan: int) -> void:
+	var done: Array = block.get("fert_months_done", [])
+	if not done.has(bulan):
+		done.append(bulan)
+	block["fert_months_done"] = done
+
+## Peringatan campur pupuk. "" kalau aman.
+static func mixing_warning(codes: Array) -> String:
+	var hyg: Array = []
+	var pho: Array = []
+	for c in codes:
+		var s := String(c)
+		if HYGROSCOPIC.has(s): hyg.append(s)
+		if PHOSPHATE_ALKALINE.has(s): pho.append(s)
+	if hyg.is_empty() or pho.is_empty():
+		return ""
+	return "Jangan dicampur: %s bersifat higroskopis/asam, sedangkan %s golongan fosfat/basa. Aplikasikan terpisah dengan jeda, bukan sekali tabur." % [
+		", ".join(hyg), ", ".join(pho)]
+
+## Teks dosis untuk prompt reminder, mis. "1,2 kg Urea per pokok".
+static func dose_text(dose: Dictionary) -> String:
+	var parts: Array = []
+	var keys: Array = dose.keys()
+	keys.sort()
+	for code in keys:
+		parts.append("%s %s" % [fmt_kg(float(dose[code])), code])
+	return ", ".join(parts)
+
+## Gram -> teks kg gaya Indonesia (koma desimal). 1200 -> "1,2 kg"; 60 -> "60 gr".
+static func fmt_kg(gram: float) -> String:
+	if gram < 1000.0:
+		return ("%d gr" % int(round(gram)))
+	var kg := gram / 1000.0
+	var s := "%.1f" % kg
+	if s.ends_with(".0"):
+		s = s.substr(0, s.length() - 2)
+	return s.replace(".", ",") + " kg"
+
 # ---------------------------------------------------------------- Util
 static func _fert_price(code: String) -> float:
 	var m: Dictionary = Database.params.get("fertilizer_price_rp_per_kg", {})

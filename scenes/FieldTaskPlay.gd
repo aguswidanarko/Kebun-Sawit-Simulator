@@ -1,8 +1,22 @@
 extends Control
-## Minigame "Tugas Lapangan" — 3 mekanik: hold, timing, targets.
+## Minigame "Tugas Lapangan" — 4 mekanik: hold, timing, targets, catch.
 ## Data dari GameState.active_field_task (dibaca dari field_tasks.json).
+##
+## Catatan desain (Catatan Perbaikan):
+## - Tiap tugas punya latar belakang foto sendiri (field "bg").
+## - Bintang skor memakai kuning emas (UIKit.GOLD), bukan hitam.
+## - "targets" kini BERONDE: tiap ronde selesai -> waktu BERHENTI dan tampil
+##   panel "Tugas selesai", baru lanjut ke ronde berikutnya saat diklik.
+## - "catch" = mekanik baru inspeksi hama: tap hama yang bergerak jalur S,
+##   jangan tap burung hantu / ayam.
+## - Hadiah uang diberikan via GameState.complete_field_task(); tiap tugas
+##   hanya boleh dimainkan 1x sehari sehingga tidak ada tombol "Ulangi".
 
 const HUB := "res://scenes/FieldTasksScreen.tscn"
+
+## Sisi ikon hama di minigame "catch" (px). Dipakai saat membuat node DAN saat
+## menghitung posisi — harus satu angka supaya tidak pernah beda.
+const CATCH_ICON := 76.0
 
 # ── State permainan ───────────────────────────────────────────────
 var _task: Dictionary = {}
@@ -14,7 +28,7 @@ var _hits: int = 0
 var _misses: int = 0
 var _feedback_timer: float = 0.0
 var _feedback_lock: bool = false
-var _phase: String = "play"   # "play" | "feedback" | "result"
+var _phase: String = "play"   # "play" | "feedback" | "round_done" | "result"
 
 # hold
 var _hold_v: float = 0.0
@@ -27,9 +41,20 @@ var _timing_speed: float = 0.024
 
 # targets
 var _cells: Array = []   # [{label, sub, valid, tapped}]
-var _start_time: float = 0.0
 var _elapsed: float = 0.0
-var _target_done: bool = false
+# Akumulasi lintas ronde (targets berjalan 5 ronde, skor dihitung total)
+var _total_hits: int = 0
+var _total_misses: int = 0
+var _total_valid: int = 0
+var _total_elapsed: float = 0.0
+
+# catch (inspeksi hama)
+var _catch_items: Array = []      # [{node, kind, t, ...}]
+var _catch_need: int = 5
+var _catch_caught: int = 0
+var _catch_wrong: int = 0
+var _catch_time_left: float = 35.0
+var _catch_spawned: bool = false
 
 # ── Node refs ─────────────────────────────────────────────────────
 var _area: Control
@@ -43,6 +68,8 @@ var _track_needle: Control  # timing: jarum
 var _target_grid: GridContainer
 var _elapsed_lbl: Label
 var _tap_count_lbl: Label
+var _catch_layer: Control
+var _round_done_layer: CanvasLayer
 
 func _ready() -> void:
 	_task = GameState.active_field_task
@@ -51,16 +78,31 @@ func _ready() -> void:
 	_mech = String(_task.get("mech", "timing"))
 	_rounds = int(_task.get("rounds", 5))
 	_timing_speed = float(_task.get("speed", 0.024))
+	if _mech == "catch":
+		var cfg: Dictionary = _task.get("catch", {})
+		_catch_need = int(cfg.get("need", 5))
+		_catch_time_left = float(cfg.get("duration", 35))
 	_build()
 	_start_round()
+	if OS.get_cmdline_user_args().has("shotminigame"):
+		call_deferred("_capture")
+
+func _capture() -> void:
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png(
+		"user://minigame_%s.png" % String(_task.get("id", "x")))
+	print("[minigame] screenshot saved")
+	get_tree().quit()
 
 # ─────────────────────────────────────────── BUILD ───────────────
 
 func _build() -> void:
+	# Latar belakang foto tugas + scrim terang supaya UI Modernist tetap terbaca.
 	var bg := ColorRect.new()
 	bg.color = UIKit.BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
+	_add_bg_photo()
 
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -71,24 +113,27 @@ func _build() -> void:
 	root.add_child(_make_topbar())
 
 	# Help strip
-	var help_m := UIKit.margin(16, 8, 16, 8)
-	var help_sb := UIKit.box(UIKit.BG, UIKit.DIVIDER, 0, 0)
+	var help_sb := UIKit.box(Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.92), UIKit.DIVIDER, 0, 0)
 	help_sb.border_width_bottom = 1
 	var help_pc := PanelContainer.new()
 	help_pc.add_theme_stylebox_override("panel", help_sb)
+	var help_m := UIKit.margin(16, 8, 16, 8)
 	var help_lbl := UIKit.label(String(_task.get("help", "")), 13, UIKit.N700)
 	help_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	help_pc.add_child(help_lbl)
+	help_m.add_child(help_lbl)
+	help_pc.add_child(help_m)
 	root.add_child(help_pc)
 
 	# Area permainan
 	_area = Control.new()
 	_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_area.clip_contents = true
 	root.add_child(_area)
 	match _mech:
 		"hold":    _build_hold()
 		"timing":  _build_timing()
 		"targets": _build_targets()
+		"catch":   _build_catch()
 
 	# Umpan balik + dots
 	var fb_row := UIKit.margin(16, 8, 16, 4)
@@ -104,16 +149,37 @@ func _build() -> void:
 	root.add_child(fb_row)
 	_rebuild_dots()
 
-	# Tombol aksi
-	if _mech != "targets":
+	# Tombol aksi (targets & catch dimainkan dengan tap langsung di area)
+	if _mech == "hold" or _mech == "timing":
 		var btn_m := UIKit.margin(16, 8, 16, 24)
 		_action_btn = _make_action_btn()
 		btn_m.add_child(_action_btn)
 		root.add_child(btn_m)
 
+## Foto latar belakang tugas (field "bg" di field_tasks.json) + scrim.
+func _add_bg_photo() -> void:
+	var path := String(_task.get("bg", ""))
+	if path == "" or not ResourceLoader.exists(path):
+		return
+	var tr := TextureRect.new()
+	tr.texture = load(path)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(tr)
+	# Scrim: tanpa ini teks gelap Modernist tenggelam di atas foto. Dipasang
+	# cukup pekat (0.90) karena beberapa foto lampiran punya tulisan judul yang
+	# menyatu di gambarnya dan akan bertabrakan dengan teks UI.
+	var scrim := ColorRect.new()
+	scrim.color = Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.90)
+	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(scrim)
+
 func _make_topbar() -> Control:
 	var tb := PanelContainer.new()
-	var sb := UIKit.box(UIKit.BG, UIKit.INK, 0, 0)
+	var sb := UIKit.box(Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.95), UIKit.INK, 0, 0)
 	sb.border_width_bottom = 2
 	tb.add_theme_stylebox_override("panel", sb)
 	var m := UIKit.margin(16, 12, 16, 12)
@@ -122,23 +188,38 @@ func _make_topbar() -> Control:
 	m.add_child(h)
 	tb.add_child(m)
 
-	# Close
-	var close_b := UIKit.close_btn(func(): get_tree().change_scene_to_file(HUB))
-	h.add_child(close_b)
+	h.add_child(UIKit.close_btn(func(): get_tree().change_scene_to_file(HUB)))
 
-	# Kicker + nama
 	var tv := VBoxContainer.new()
 	tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tv.add_theme_constant_override("separation", 2)
-	var mech_label := {"hold": "TAHAN", "timing": "TIMING", "targets": "TARGET"}
-	tv.add_child(UIKit.kicker("%s · %s" % [mech_label.get(_mech, _mech.to_upper()), String(_task.get("verb","")).to_upper()], UIKit.ACCENT_700))
-	tv.add_child(UIKit.label(String(_task.get("name", "?")), 17, UIKit.INK, 800))
+	tv.add_child(UIKit.kicker(_kicker_text(), UIKit.ACCENT_700))
+	var nm := UIKit.label(String(_task.get("name", "?")), 17, UIKit.INK, 800)
+	nm.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tv.add_child(nm)
 	h.add_child(tv)
 
-	# Progres kanan
-	_round_lbl = UIKit.label("1/%d" % _rounds, 14, UIKit.N700, 600)
+	_round_lbl = UIKit.label(_progress_text(), 14, UIKit.N700, 600)
 	h.add_child(_round_lbl)
 	return tb
+
+## "TAHAN · SEMPROT". Kalau verb-nya sama dengan nama mekanik (inspeksi:
+## TANGKAP · TANGKAP) tampilkan satu saja.
+func _kicker_text() -> String:
+	var mech := _mech_label()
+	var verb := String(_task.get("verb", "")).to_upper()
+	if verb == "" or verb == mech:
+		return mech
+	return "%s · %s" % [mech, verb]
+
+func _mech_label() -> String:
+	return {"hold": "TAHAN", "timing": "TIMING", "targets": "TARGET", "catch": "TANGKAP"}.get(
+		_mech, _mech.to_upper())
+
+func _progress_text() -> String:
+	if _mech == "catch":
+		return "%d/%d" % [_catch_caught, _catch_need]
+	return "%d/%d" % [_round_idx + 1, _rounds]
 
 func _make_action_btn() -> Button:
 	var b := Button.new()
@@ -208,31 +289,26 @@ func _build_hold() -> void:
 	gauge_inner.add_child(zone_band)
 	h.add_child(gauge_outer)
 
-	# Kanan: label atas + angka + label bawah
+	# Kanan: label atas + angka + label bawah. Teksnya per tugas via
+	# "hold_labels" di field_tasks.json (semprot pakai default).
+	var hl: Dictionary = _task.get("hold_labels", {})
 	var rv := VBoxContainer.new()
 	rv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rv.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rv.add_theme_constant_override("separation", 8)
-	var is_buka := (String(_task.get("id","")) == "buka")
-	var top_lbl := UIKit.label(
-		"MESIN PANAS" if is_buka else "DOSIS BERLEBIH", 11, UIKit.N600, 600)
-	rv.add_child(top_lbl)
+	rv.add_child(UIKit.label(String(hl.get("top", "DOSIS BERLEBIH")), 11, UIKit.N600, 600))
 	var sp1 := Control.new(); sp1.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rv.add_child(sp1)
-	var zone_kicker := UIKit.kicker("ZONA TEPAT")
-	rv.add_child(zone_kicker)
+	rv.add_child(UIKit.kicker("ZONA TEPAT"))
 	_val_lbl = UIKit.label("0%", 56, UIKit.INK, 800)
 	_val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rv.add_child(_val_lbl)
-	var unit_lbl := UIKit.meta(
-		"% putaran mesin" if is_buka else "% dosis piringan")
+	var unit_lbl := UIKit.meta(String(hl.get("unit", "% dosis piringan")))
 	unit_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rv.add_child(unit_lbl)
 	var sp2 := Control.new(); sp2.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rv.add_child(sp2)
-	var bot_lbl := UIKit.label(
-		"BELUM TERTEBAS" if is_buka else "PIRINGAN KERING", 11, UIKit.N600, 600)
-	rv.add_child(bot_lbl)
+	rv.add_child(UIKit.label(String(hl.get("bottom", "PIRINGAN KERING")), 11, UIKit.N600, 600))
 	h.add_child(rv)
 
 func _update_hold_visuals() -> void:
@@ -255,24 +331,20 @@ func _build_timing() -> void:
 	v.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_area.add_child(v)
 
-	# Angka besar
 	_val_lbl = UIKit.label("0%", 56, UIKit.INK, 800)
 	_val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var vsp := Control.new(); vsp.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(vsp)
 	v.add_child(_val_lbl)
 
-	# Track horizontal
 	var track_outer := PanelContainer.new()
 	track_outer.custom_minimum_size = Vector2(0, 88)
-	var track_sb := UIKit.box(UIKit.SURFACE, UIKit.INK, 2, 0)
-	track_outer.add_theme_stylebox_override("panel", track_sb)
+	track_outer.add_theme_stylebox_override("panel", UIKit.box(UIKit.SURFACE, UIKit.INK, 2, 0))
 
 	var track_inner := Control.new()
 	track_inner.set_anchors_preset(Control.PRESET_FULL_RECT)
 	track_outer.add_child(track_inner)
 
-	# Skala tiap 10%
 	for i in 9:
 		var tl := ColorRect.new()
 		tl.color = Color(UIKit.GRIDLINE.r, UIKit.GRIDLINE.g, UIKit.GRIDLINE.b, 0.3)
@@ -282,7 +354,6 @@ func _build_timing() -> void:
 		tl.offset_left = 0; tl.offset_right = 1
 		track_inner.add_child(tl)
 
-	# Zona tepat
 	var zone: Array = _task.get("zone", [0.42, 0.6])
 	var zb := Control.new()
 	zb.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -301,7 +372,6 @@ func _build_timing() -> void:
 	zb.add_child(zb_right)
 	track_inner.add_child(zb)
 
-	# Jarum
 	_track_needle = ColorRect.new()
 	_track_needle.color = UIKit.INK
 	_track_needle.custom_minimum_size = Vector2(4, 0)
@@ -315,23 +385,18 @@ func _build_timing() -> void:
 	track_m.add_child(track_outer)
 	v.add_child(track_m)
 
-	# Label bawah
 	var is_pupuk := (String(_task.get("id","")) == "pupuk")
-	var lo_mid_hi: Array
-	if is_pupuk:
-		lo_mid_hi = ["0 kg", "± 2 kg/pokok", "4 kg"]
-	else:
-		lo_mid_hi = ["Pelepah", "Tangkai tandan", "Buah"]
+	var lo_mid_hi: Array = ["0 kg", "± 2 kg/pokok", "4 kg"] if is_pupuk \
+		else ["Pelepah", "Tangkai tandan", "Buah"]
 	var lrow := HBoxContainer.new()
 	lrow.add_theme_constant_override("separation", 0)
 	var ll := UIKit.meta(lo_mid_hi[0]); ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var lm := UIKit.label(lo_mid_hi[1], 11, UIKit.ACCENT_700)
-	lm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var lmid := UIKit.label(lo_mid_hi[1], 11, UIKit.ACCENT_700)
+	lmid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lmid.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var lr := UIKit.meta(lo_mid_hi[2]); lr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lr.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	lrow.add_child(ll); lrow.add_child(lm); lrow.add_child(lr)
-	v.add_child(UIKit.margin(16, 0, 16, 0))
+	lrow.add_child(ll); lrow.add_child(lmid); lrow.add_child(lr)
 	var lm2 := UIKit.margin(16, 0, 16, 0)
 	lm2.add_child(lrow)
 	v.add_child(lm2)
@@ -340,9 +405,8 @@ func _build_timing() -> void:
 	v.add_child(vsp2)
 
 func _update_timing_visuals() -> void:
-	var is_pupuk := (String(_task.get("id","")) == "pupuk")
 	if _val_lbl:
-		if is_pupuk:
+		if String(_task.get("id","")) == "pupuk":
 			_val_lbl.text = "%.1f kg" % (_timing_v * 4.0)
 		else:
 			_val_lbl.text = "%d%%" % int(_timing_v * 100)
@@ -358,7 +422,6 @@ func _build_targets() -> void:
 	v.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_area.add_child(v)
 
-	# Stopwatch + meta
 	var info_m := UIKit.margin(16, 8, 16, 4)
 	var ih := HBoxContainer.new()
 	ih.add_theme_constant_override("separation", 8)
@@ -371,7 +434,6 @@ func _build_targets() -> void:
 	info_m.add_child(ih)
 	v.add_child(info_m)
 
-	# Grid 3×4
 	var grid_m := UIKit.margin(16, 0, 16, 8)
 	_target_grid = GridContainer.new()
 	_target_grid.columns = 3
@@ -385,12 +447,7 @@ func _populate_targets() -> void:
 	_cells.clear()
 	for c in _target_grid.get_children():
 		c.queue_free()
-	var task_id := String(_task.get("id", ""))
-	match task_id:
-		"angkut":
-			for _i in 5: _cells.append({"label": "TBS matang", "sub": "TANDAN", "valid": true, "tapped": false})
-			for _i in 3: _cells.append({"label": "Brondolan", "sub": "BUAH LEPAS", "valid": true, "tapped": false})
-			for _i in 4: _cells.append({"label": "Tandan mentah", "sub": "JANGAN MUAT", "valid": false, "tapped": false})
+	match String(_task.get("id", "")):
 		"inspeksi":
 			var symptoms: Dictionary = Database.field_tasks.get("inspection_symptoms", {})
 			var normal: Array = Database.field_tasks.get("inspection_normal_labels", [])
@@ -410,7 +467,7 @@ func _populate_targets() -> void:
 					"valid": is_sym, "tapped": false
 				})
 		"tanam":
-			for i in 7: _cells.append({"label": "Ajir", "sub": "TITIK TANAM", "valid": true, "tapped": false})
+			for _i in 7: _cells.append({"label": "Ajir", "sub": "TITIK TANAM", "valid": true, "tapped": false})
 			var obstacles := ["Batu", "Genangan", "Tunggul"]
 			for i in 5: _cells.append({"label": obstacles[i % 3], "sub": "RINTANGAN", "valid": false, "tapped": false})
 
@@ -426,13 +483,15 @@ func _make_target_cell(cell_data: Dictionary) -> PanelContainer:
 		UIKit.box(UIKit.BG, Color(UIKit.GRIDLINE.r, UIKit.GRIDLINE.g, UIKit.GRIDLINE.b, 0.5), 1, 0))
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed:
+		if (ev is InputEventMouseButton and ev.pressed) \
+				or (ev is InputEventScreenTouch and ev.pressed):
 			_on_target_tap(cell_data, card))
 	var cv := VBoxContainer.new()
 	cv.add_theme_constant_override("separation", 2)
 	card.add_child(cv)
 	var sub_lbl := UIKit.label(cell_data.get("sub", ""), 9, UIKit.N700, 600)
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cv.add_child(sub_lbl)
 	var main_lbl := UIKit.label(cell_data.get("label", "?"), 12, UIKit.INK, 800)
 	main_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -445,9 +504,8 @@ func _make_target_cell(cell_data: Dictionary) -> PanelContainer:
 func _on_target_tap(cell_data: Dictionary, card: PanelContainer) -> void:
 	if cell_data.get("tapped", false) or _phase != "play" or _feedback_lock: return
 	cell_data["tapped"] = true
-	var valid: bool = cell_data.get("valid", false)
 	var main_lbl := cell_data.get("_main_lbl") as Label
-	if valid:
+	if bool(cell_data.get("valid", false)):
 		_hits += 1
 		card.add_theme_stylebox_override("panel", UIKit.box(UIKit.INK, UIKit.INK, 1, 0))
 		if main_lbl: main_lbl.add_theme_color_override("font_color", UIKit.BG)
@@ -460,11 +518,24 @@ func _on_target_tap(cell_data: Dictionary, card: PanelContainer) -> void:
 		_feedback_lbl.text = "Salah pilih"
 		_feedback_lbl.add_theme_color_override("font_color", UIKit.ACCENT_700)
 	_update_tap_info()
-	var valid_count := _valid_cell_count()
-	if _hits >= valid_count:
-		_feedback_lock = true
-		_feedback_timer = 0.5
-		# akan lanjut ke hasil di _process
+	if _hits >= _valid_cell_count():
+		# Ronde selesai: hentikan stopwatch dan tampilkan panel "Tugas selesai".
+		# BUG LAMA: dulu hanya _feedback_timer yang diisi tanpa mengubah _phase,
+		# sehingga blok "feedback" di _process tidak pernah jalan — waktu terus
+		# berjalan dan ronde menggantung selamanya.
+		_finish_targets_round()
+
+func _finish_targets_round() -> void:
+	_phase = "round_done"
+	_feedback_lock = true
+	_total_hits += _hits
+	_total_misses += _misses
+	_total_valid += _valid_cell_count()
+	_total_elapsed += _elapsed
+	if _round_idx + 1 >= _rounds:
+		_show_result()
+	else:
+		_show_round_done()
 
 func _valid_cell_count() -> int:
 	var n := 0
@@ -476,6 +547,209 @@ func _update_tap_info() -> void:
 	if _tap_count_lbl:
 		_tap_count_lbl.text = "Salah %d · target < 25 dtk" % _misses
 
+## Panel "Tugas selesai" antar-ronde. Waktu sudah berhenti (_phase =
+## "round_done"), user menekan tombol untuk lanjut ke ronde berikutnya.
+func _show_round_done() -> void:
+	_round_done_layer = CanvasLayer.new()
+	_round_done_layer.layer = 80
+	add_child(_round_done_layer)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_round_done_layer.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UIKit.box(UIKit.BG, UIKit.INK, 2, 0))
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.custom_minimum_size = Vector2(300, 0)
+	_round_done_layer.add_child(panel)
+
+	var m := UIKit.margin(20, 20, 20, 20)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	m.add_child(v)
+	panel.add_child(m)
+
+	v.add_child(UIKit.kicker("RONDE %d DARI %d" % [_round_idx + 1, _rounds], UIKit.ACCENT_700))
+	v.add_child(UIKit.label("Tugas selesai", 26, UIKit.INK, 800))
+	v.add_child(UIKit.wrap(UIKit.meta("Waktu ronde ini %.1f dtk · benar %d · salah %d" % [
+		_elapsed, _hits, _misses])))
+	v.add_child(UIKit.btn("Lanjut ke tugas %d dari %d  ›" % [_round_idx + 2, _rounds],
+		_next_targets_round, "primary", 15, 52))
+
+func _next_targets_round() -> void:
+	if _round_done_layer:
+		_round_done_layer.queue_free()
+		_round_done_layer = null
+	_round_idx += 1
+	_start_round()
+
+# ─────────────────────────────────────────── CATCH ───────────────
+# Inspeksi hama: ikon hama bergerak bebas di jalur melingkar/S (Lissajous).
+# Tap hama = tangkap. Tap burung hantu / ayam = salah (predator alami).
+
+func _build_catch() -> void:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	v.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_area.add_child(v)
+
+	var info_m := UIKit.margin(16, 8, 16, 4)
+	var ih := HBoxContainer.new()
+	ih.add_theme_constant_override("separation", 8)
+	_elapsed_lbl = UIKit.label("%.0f dtk" % _catch_time_left, 28, UIKit.INK, 800)
+	ih.add_child(_elapsed_lbl)
+	_tap_count_lbl = UIKit.meta("Tertangkap 0/%d · salah 0" % _catch_need)
+	_tap_count_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_tap_count_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	ih.add_child(_tap_count_lbl)
+	info_m.add_child(ih)
+	v.add_child(info_m)
+
+	# Lapangan main: hama diposisikan absolut di sini.
+	_catch_layer = Control.new()
+	_catch_layer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_catch_layer.clip_contents = true
+	_catch_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(_catch_layer)
+
+## Spawn ditunda sampai _catch_layer punya ukuran nyata (setelah layout).
+func _spawn_catch_items() -> void:
+	var cfg: Dictionary = _task.get("catch", {})
+	var pests: Array = cfg.get("pests", [])
+	var avoid: Array = cfg.get("avoid", [])
+	if pests.is_empty():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+
+	# Pusat lintasan diambil dari grid 3x3 yang diacak, bukan acak murni —
+	# acak murni membuat hama menggerombol di tengah dan saling menutupi.
+	var centers: Array = []
+	for gx in 3:
+		for gy in 3:
+			centers.append(Vector2(0.2 + gx * 0.3, 0.2 + gy * 0.3))
+	centers.shuffle()
+
+	# Jenis hama diacak: kalau diambil berurutan, jenis ke-6 tidak pernah
+	# muncul karena hanya 5 hama yang di-spawn.
+	var pool: Array = pests.duplicate()
+	pool.shuffle()
+	var i := 0
+	for n in _catch_need:
+		_add_catch_item(pool[n % pool.size()], "pest", rng, centers[i % centers.size()])
+		i += 1
+	# Pengecoh: burung hantu & ayam, masing-masing satu.
+	for a in avoid:
+		_add_catch_item(a, "avoid", rng, centers[i % centers.size()])
+		i += 1
+	_catch_spawned = true
+
+func _add_catch_item(spec: Dictionary, kind: String, rng: RandomNumberGenerator, center: Vector2) -> void:
+	var holder := Control.new()
+	holder.custom_minimum_size = Vector2(CATCH_ICON, CATCH_ICON)
+	holder.size = Vector2(CATCH_ICON, CATCH_ICON)
+	holder.mouse_filter = Control.MOUSE_FILTER_STOP
+	holder.tooltip_text = String(spec.get("label", ""))
+
+	var img_path := String(spec.get("img", ""))
+	if ResourceLoader.exists(img_path):
+		var tr := TextureRect.new()
+		tr.texture = load(img_path)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(tr)
+	else:
+		# Fallback kalau gambar hilang: kotak berlabel, tetap bisa dimainkan.
+		var box := ColorRect.new()
+		box.color = UIKit.N300
+		box.set_anchors_preset(Control.PRESET_FULL_RECT)
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(box)
+
+	# Label nama di bawah ikon — pemain harus bisa membedakan dengan cepat.
+	var cap := UIKit.label(String(spec.get("label", "")), 9, UIKit.INK, 600)
+	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cap.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	cap.offset_top = -12
+	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(cap)
+
+	var item := {
+		"node": holder, "kind": kind, "caught": false,
+		"t": rng.randf_range(0.0, TAU),
+		# Lissajous 1:2 -> lintasan angka-8 / huruf S; rasio acak bikin tiap
+		# hama punya pola berbeda sehingga tidak terlihat seragam.
+		"fx": rng.randf_range(0.5, 1.1),
+		"fy": rng.randf_range(1.4, 2.3),
+		"phase": rng.randf_range(0.0, TAU),
+		"speed": rng.randf_range(0.5, 0.95),
+		# Amplitudo kecil supaya tiap hama tetap di sekitar selnya sendiri
+		# dan tidak saling menimpa.
+		"mx": rng.randf_range(0.10, 0.18),
+		"my": rng.randf_range(0.10, 0.18),
+		"cx": center.x,
+		"cy": center.y,
+	}
+	holder.gui_input.connect(func(ev):
+		if (ev is InputEventMouseButton and ev.pressed) \
+				or (ev is InputEventScreenTouch and ev.pressed):
+			_on_catch_tap(item))
+	_catch_layer.add_child(holder)
+	_catch_items.append(item)
+
+func _update_catch(delta: float) -> void:
+	var area := _catch_layer.size
+	if area.x < 10.0 or area.y < 10.0:
+		return
+	if not _catch_spawned:
+		_spawn_catch_items()
+	var icon := CATCH_ICON
+	for it in _catch_items:
+		if bool(it["caught"]):
+			continue
+		it["t"] = float(it["t"]) + delta * float(it["speed"])
+		var t: float = it["t"]
+		var x: float = float(it["cx"]) + sin(t * float(it["fx"]) + float(it["phase"])) * float(it["mx"])
+		var y: float = float(it["cy"]) + sin(t * float(it["fy"])) * float(it["my"])
+		var node: Control = it["node"]
+		node.position = Vector2(
+			clampf(x * area.x - icon * 0.5, 0.0, max(0.0, area.x - icon)),
+			clampf(y * area.y - icon * 0.5, 0.0, max(0.0, area.y - icon)))
+
+func _on_catch_tap(item: Dictionary) -> void:
+	if _phase != "play" or bool(item["caught"]):
+		return
+	var node: Control = item["node"]
+	if String(item["kind"]) == "pest":
+		item["caught"] = true
+		_catch_caught += 1
+		node.visible = false
+		_feedback_lbl.text = "Tertangkap"
+		_feedback_lbl.add_theme_color_override("font_color", UIKit.INK)
+	else:
+		# Burung hantu & ayam predator alami — menangkapnya merugikan.
+		_catch_wrong += 1
+		_feedback_lbl.text = "Jangan tangkap predator alami!"
+		_feedback_lbl.add_theme_color_override("font_color", UIKit.ACCENT_700)
+		node.modulate = Color(1, 0.5, 0.5, 1)
+		var tw := node.create_tween()
+		tw.tween_property(node, "modulate", Color(1, 1, 1, 1), 0.4)
+	_update_catch_info()
+	if _catch_caught >= _catch_need:
+		_show_result()
+
+func _update_catch_info() -> void:
+	if _tap_count_lbl:
+		_tap_count_lbl.text = "Tertangkap %d/%d · salah %d" % [_catch_caught, _catch_need, _catch_wrong]
+	if _round_lbl:
+		_round_lbl.text = _progress_text()
+
 # ──────────────────────────────────────── LOOP ───────────────────
 
 func _process(delta: float) -> void:
@@ -483,9 +757,6 @@ func _process(delta: float) -> void:
 		_feedback_timer -= delta
 		if _feedback_timer <= 0.0:
 			_feedback_lock = false
-			if _mech == "targets" and _hits >= _valid_cell_count():
-				_show_result()
-				return
 			_round_idx += 1
 			if _round_idx >= _rounds:
 				_show_result()
@@ -493,25 +764,31 @@ func _process(delta: float) -> void:
 				_start_round()
 		return
 
-	if _phase == "result": return
+	if _phase == "result" or _phase == "round_done":
+		return
 
-	if _mech == "hold":
-		if _hold_down:
-			_hold_v = minf(_hold_v + 0.011, 1.0)
-			if _hold_v >= 1.0 and _action_btn and not _action_btn.disabled:
-				_action_btn.disabled = true
-				_trigger_hold_release(true)
-		_update_hold_visuals()
-
-	elif _mech == "timing":
-		_timing_v += _timing_dir * _timing_speed * 60.0 * delta
-		if _timing_v >= 1.0: _timing_v = 1.0; _timing_dir = -1.0
-		elif _timing_v <= 0.0: _timing_v = 0.0; _timing_dir = 1.0
-		_update_timing_visuals()
-
-	elif _mech == "targets":
-		_elapsed += delta
-		if _elapsed_lbl: _elapsed_lbl.text = "%.1f dtk" % _elapsed
+	match _mech:
+		"hold":
+			if _hold_down:
+				_hold_v = minf(_hold_v + 0.011, 1.0)
+				if _hold_v >= 1.0 and _action_btn and not _action_btn.disabled:
+					_action_btn.disabled = true
+					_trigger_hold_release(true)
+			_update_hold_visuals()
+		"timing":
+			_timing_v += _timing_dir * _timing_speed * 60.0 * delta
+			if _timing_v >= 1.0: _timing_v = 1.0; _timing_dir = -1.0
+			elif _timing_v <= 0.0: _timing_v = 0.0; _timing_dir = 1.0
+			_update_timing_visuals()
+		"targets":
+			_elapsed += delta
+			if _elapsed_lbl: _elapsed_lbl.text = "%.1f dtk" % _elapsed
+		"catch":
+			_catch_time_left -= delta
+			_update_catch(delta)
+			if _elapsed_lbl: _elapsed_lbl.text = "%.0f dtk" % maxf(_catch_time_left, 0.0)
+			if _catch_time_left <= 0.0:
+				_show_result()
 
 # ──────────────────────────────────────── INPUT ──────────────────
 
@@ -533,9 +810,9 @@ func _trigger_hold_release(overrun: bool) -> void:
 	if _feedback_lock: return
 	_feedback_lock = true
 	var zone: Array = _task.get("zone", [0.5, 0.7])
-	var is_buka := (String(_task.get("id","")) == "buka")
+	var hl: Dictionary = _task.get("hold_labels", {})
 	if overrun:
-		_show_feedback("Lewat zona — %s" % ("Mesin overheat" if is_buka else "Kebanyakan — gulma mati, boros herbisida"), false)
+		_show_feedback("Lewat zona — %s" % String(hl.get("top", "Kebanyakan")).capitalize(), false)
 	elif _hold_v < float(zone[0]):
 		_show_feedback("Kurang — lepas terlalu cepat", false)
 	else:
@@ -572,14 +849,15 @@ func _start_round() -> void:
 	_hold_down = false
 	_timing_v = 0.0
 	_timing_dir = 1.0
-	_feedback_lbl.text = ""
-	if _round_lbl: _round_lbl.text = "%d/%d" % [_round_idx + 1, _rounds]
+	if _feedback_lbl: _feedback_lbl.text = ""
+	if _round_lbl: _round_lbl.text = _progress_text()
 	if _action_btn:
 		_action_btn.text = _action_text(false)
 		_action_btn.disabled = false
 	_rebuild_dots()
 	if _mech == "targets":
-		_hits = 0; _misses = 0; _elapsed = 0.0; _target_done = false
+		_hits = 0; _misses = 0; _elapsed = 0.0
+		_update_tap_info()
 		_populate_targets()
 
 func _action_text(holding: bool) -> String:
@@ -588,17 +866,15 @@ func _action_text(holding: bool) -> String:
 	return "Tap · %s" % String(_task.get("verb","Tap"))
 
 func _rebuild_dots() -> void:
-	if _dots_bar == null or _mech == "targets": return
+	if _dots_bar == null or _mech == "catch": return
 	for c in _dots_bar.get_children(): c.queue_free()
 	for i in _rounds:
 		var dot := PanelContainer.new()
 		dot.custom_minimum_size = Vector2(18, 18)
-		var is_active := (i == _round_idx and _phase == "play")
 		var sb: StyleBoxFlat
 		if i < _round_idx:
-			# sudah selesai — hit atau miss
-			sb = UIKit.box(UIKit.INK, UIKit.INK, 2, 0)  # akan diupdate saat feedback
-		elif is_active:
+			sb = UIKit.box(UIKit.INK, UIKit.INK, 2, 0)
+		elif i == _round_idx and _phase == "play":
 			sb = UIKit.box(UIKit.N300, UIKit.INK, 2, 0)
 		else:
 			sb = UIKit.box(Color(0,0,0,0), UIKit.INK, 2, 0)
@@ -608,28 +884,46 @@ func _rebuild_dots() -> void:
 # ──────────────────────────────────────── HASIL ──────────────────
 
 func _show_result() -> void:
+	if _phase == "result":
+		return
 	_phase = "result"
+	if _round_done_layer:
+		_round_done_layer.queue_free()
+		_round_done_layer = null
 	var stars := _calc_stars()
-	GameState.complete_field_task(String(_task.get("id","")), stars, "self")
-	_build_result_screen(stars)
+	var payout := GameState.complete_field_task(String(_task.get("id","")), stars, "self")
+	_build_result_screen(stars, payout)
 
 func _calc_stars() -> int:
-	if _mech == "targets":
-		var valid_n := float(_valid_cell_count())
-		if valid_n <= 0: return 1
-		var acc := float(_hits - _misses) / valid_n
-		if acc >= 0.99 and _elapsed < 25.0: return 3
-		if acc >= 0.6: return 2
-		return 1
-	else:
-		var r := float(_hits) / float(maxi(_rounds, 1))
-		if r >= 0.8: return 3
-		if r >= 0.5: return 2
-		return 1
+	match _mech:
+		"targets":
+			var valid_n := float(maxi(_total_valid, 1))
+			var acc := float(_total_hits - _total_misses) / valid_n
+			# Ambang waktu diskalakan ke jumlah ronde (25 dtk per ronde).
+			if acc >= 0.99 and _total_elapsed < 25.0 * float(_rounds): return 3
+			if acc >= 0.6: return 2
+			return 1
+		"catch":
+			if _catch_caught < _catch_need:
+				return 1   # waktu habis sebelum semua hama tertangkap
+			var total := float(_catch_caught + _catch_wrong)
+			var acc2 := float(_catch_caught) / maxf(total, 1.0)
+			if acc2 >= 0.99: return 3
+			if acc2 >= 0.7: return 2
+			return 1
+		_:
+			var r := float(_hits) / float(maxi(_rounds, 1))
+			if r >= 0.8: return 3
+			if r >= 0.5: return 2
+			return 1
 
-func _build_result_screen(stars: int) -> void:
-	# Hapus semua child lama
+func _build_result_screen(stars: int, payout: Dictionary) -> void:
 	for c in get_children(): c.queue_free()
+
+	var bg := ColorRect.new()
+	bg.color = UIKit.BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
 
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -649,26 +943,27 @@ func _build_result_screen(stars: int) -> void:
 	pv.add_theme_constant_override("separation", 16)
 	pm.add_child(pv)
 
-	var mech_label := {"hold": "TAHAN", "timing": "TIMING", "targets": "TARGET"}
-	pv.add_child(UIKit.kicker("%s · %s · SELESAI" % [
-		mech_label.get(_mech, _mech.to_upper()), String(_task.get("verb","")).to_upper()],
+	pv.add_child(UIKit.kicker("%s · SELESAI" % _kicker_text(),
 		Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.85)))
 
 	var headlines := {3: "Sempurna.", 2: "Cukup baik.", 1: "Perlu latihan."}
 	pv.add_child(UIKit.label(headlines.get(stars, "Selesai."), 44, UIKit.BG, 800))
 
-	# Bintang 3 kotak 56×56
+	# Bintang: kuning emas untuk yang diraih, outline pudar untuk sisanya.
 	var stars_row := HBoxContainer.new()
 	stars_row.add_theme_constant_override("separation", 8)
 	stars_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	for s in 3:
+		var earned := s < stars
 		var sq := PanelContainer.new()
 		sq.custom_minimum_size = Vector2(56, 56)
 		sq.add_theme_stylebox_override("panel",
-			UIKit.box(UIKit.INK if s < stars else Color(0,0,0,0),
-				UIKit.BG, 2, 0))
+			UIKit.box(UIKit.GOLD if earned else Color(0,0,0,0),
+				UIKit.GOLD_DARK if earned else Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.55),
+				2, 0))
 		if ResourceLoader.exists("res://assets/ui/icons/star.svg"):
-			var ic := UIKit.icon("star", 24, UIKit.BG if s < stars else Color(UIKit.BG.r,UIKit.BG.g,UIKit.BG.b,0.45))
+			var ic := UIKit.icon("star", 24,
+				UIKit.INK if earned else Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.45))
 			ic.set_anchors_preset(Control.PRESET_CENTER)
 			ic.position = Vector2(-12, -12)
 			sq.add_child(ic)
@@ -677,44 +972,55 @@ func _build_result_screen(stars: int) -> void:
 	root.add_child(poster)
 
 	# Strip statistik
-	root.add_child(_make_result_stats(stars))
+	root.add_child(_make_result_stats())
+
+	# Hadiah
+	var reward := int(payout.get("reward", 0))
+	var bonus := int(payout.get("bonus", 0))
+	var rm := UIKit.margin(16, 12, 16, 4)
+	var rv := VBoxContainer.new()
+	rv.add_theme_constant_override("separation", 6)
+	rm.add_child(rv)
+	if reward > 0:
+		rv.add_child(UIKit.label("Hadiah: Rp%s" % GameState._fmt(reward), 20, UIKit.INK, 800))
+	else:
+		rv.add_child(UIKit.wrap(UIKit.meta(
+			"Tidak ada hadiah — tugas ini sudah pernah dikerjakan hari ini.")))
+	if bonus > 0:
+		rv.add_child(UIKit.wrap(UIKit.label(
+			"★ Bonus semua tugas selesai: Rp%s" % GameState._fmt(bonus), 15, UIKit.ACCENT_700, 800)))
+	root.add_child(rm)
 
 	# Catatan
-	var note_m := UIKit.margin(16, 12, 16, 4)
-	var hk_save := float(_task.get("hk_delegate", 0.5))
+	var note_m := UIKit.margin(16, 4, 16, 4)
 	var note_txt: String
-	if stars == 3:
-		note_txt = "Hasil terbaik tersimpan. Tugas ini tidak menambah biaya upah karena dikerjakan sendiri."
-	else:
-		if _mech == "targets":
-			note_txt = "Syarat 3 bintang: tanpa salah pilih dan selesai di bawah 25 detik. Menugaskan tim selalu memberi 2 bintang."
-		else:
+	match _mech:
+		"targets":
+			note_txt = "Syarat 3 bintang: tanpa salah pilih sepanjang %d ronde. Menugaskan tim selalu memberi 2 bintang." % _rounds
+		"catch":
+			note_txt = "Syarat 3 bintang: tangkap semua hama tanpa sekali pun menangkap burung hantu atau ayam."
+		_:
 			note_txt = "Syarat 3 bintang: minimal 80%% putaran tepat di zona. Menugaskan tim selalu memberi 2 bintang."
 	var note_lbl := UIKit.label(note_txt, 13, UIKit.N700)
 	note_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note_m.add_child(note_lbl)
 	root.add_child(note_m)
 
+	var limit_m := UIKit.margin(16, 0, 16, 4)
+	limit_m.add_child(UIKit.wrap(UIKit.meta(
+		"Tiap tugas lapangan hanya bisa dimainkan satu kali per hari.")))
+	root.add_child(limit_m)
+
 	var sp := Control.new(); sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(sp)
 
-	# Tombol
+	# Tombol — tanpa "Ulangi tugas" karena limit 1x sehari.
 	var btn_m := UIKit.margin(16, 8, 16, 24)
-	var bv := VBoxContainer.new()
-	bv.add_theme_constant_override("separation", 10)
-	btn_m.add_child(bv)
-	bv.add_child(UIKit.btn("Kembali ke peta  ›",
+	btn_m.add_child(UIKit.btn("Kembali ke peta  ›",
 		func(): get_tree().change_scene_to_file(HUB), "primary", 15, 52))
-	var retry_btn := UIKit.btn("Ulangi tugas", func():
-		_round_idx = 0; _hits = 0; _misses = 0
-		_elapsed = 0.0; _feedback_lock = false; _phase = "play"
-		_build(); _start_round(), "secondary", 14, 44)
-	if ResourceLoader.exists("res://assets/ui/icons/rotate-ccw.svg"):
-		retry_btn.icon = load("res://assets/ui/icons/rotate-ccw.svg")
-	bv.add_child(retry_btn)
 	root.add_child(btn_m)
 
-func _make_result_stats(stars: int) -> Control:
+func _make_result_stats() -> Control:
 	var strip := PanelContainer.new()
 	var sb := UIKit.box(UIKit.BG, UIKit.INK, 0, 0)
 	sb.border_width_top = 2; sb.border_width_bottom = 2
@@ -724,20 +1030,27 @@ func _make_result_stats(stars: int) -> Control:
 	strip.add_child(h)
 	var hk := float(_task.get("hk_delegate", 0.5))
 	var cells: Array
-	if _mech == "targets":
-		var valid_n := float(maxi(_valid_cell_count(), 1))
-		var acc := clampf(float(_hits - _misses) / valid_n * 100.0, 0.0, 100.0)
-		cells = [
-			["AKURASI", "%d%%" % int(acc)],
-			["WAKTU", "%.1f dtk" % _elapsed],
-			["UPAH HEMAT", "%s HK" % _fmt_hk(hk)],
-		]
-	else:
-		cells = [
-			["TEPAT", "%d/%d" % [_hits, _rounds]],
-			["MELESET", "%d" % (_rounds - _hits)],
-			["UPAH HEMAT", "%s HK" % _fmt_hk(hk)],
-		]
+	match _mech:
+		"targets":
+			var valid_n := float(maxi(_total_valid, 1))
+			var acc := clampf(float(_total_hits - _total_misses) / valid_n * 100.0, 0.0, 100.0)
+			cells = [
+				["AKURASI", "%d%%" % int(acc)],
+				["WAKTU", "%.1f dtk" % _total_elapsed],
+				["UPAH HEMAT", "%s HK" % _fmt_hk(hk)],
+			]
+		"catch":
+			cells = [
+				["TERTANGKAP", "%d/%d" % [_catch_caught, _catch_need]],
+				["SALAH", "%d" % _catch_wrong],
+				["UPAH HEMAT", "%s HK" % _fmt_hk(hk)],
+			]
+		_:
+			cells = [
+				["TEPAT", "%d/%d" % [_hits, _rounds]],
+				["MELESET", "%d" % (_rounds - _hits)],
+				["UPAH HEMAT", "%s HK" % _fmt_hk(hk)],
+			]
 	for i in cells.size():
 		if i > 0: h.add_child(UIKit.vrule())
 		var mc := UIKit.margin(16, 12, 16, 12)

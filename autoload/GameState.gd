@@ -79,6 +79,93 @@ func first_planted_index() -> int:
 			return i
 	return -1
 
+# ----------------------------------------------------------- syarat tugas
+# Dipakai bersama oleh DashboardScreen (tampil/sembunyi tombol Tugas Lapangan)
+# dan FieldTasksScreen (aktif/nonaktif tiap tugas). Satu sumber supaya syarat
+# di tombol dan di daftar tugas tidak pernah beda.
+
+## Sudah punya lahan yang DITANAM sawit (bukan cuma dibeli/dibuka).
+func has_planted_land() -> bool:
+	return first_planted_index() >= 0
+
+## Sedang punya areal pembibitan berjalan.
+func has_nursery() -> bool:
+	return not nursery.is_empty()
+
+## Punya minimal satu blok yang sudah TM (Tanaman Menghasilkan).
+## Ambang TM = start_harvest_age_year benihnya (umumnya 3-4 tahun).
+func has_tm_land() -> bool:
+	return first_tm_index() >= 0
+
+## Indeks plot TM pertama, -1 kalau tak ada.
+func first_tm_index() -> int:
+	var dpy := float(Database.params.get("days_per_year", 365))
+	for i in plots.size():
+		var p: Dictionary = plots[i]
+		if p.get("state") != "tanam":
+			continue
+		var sd := Database.get_seed(String(p.get("seed_id", "")))
+		var thr := int(sd.get("start_harvest_age_year", 4))
+		var age := float(day - int(p.get("planting_day", day))) / dpy
+		if int(age) >= thr:
+			return i
+	return -1
+
+# ------------------------------------------------- reminder pemupukan
+# Tiap bulan berjadwal (data/fertilizer_schedule.json) memunculkan prompt per
+# blok. Kalau user melompat 15 hari dan melewati beberapa jadwal, semuanya
+# ikut terkumpul dan ditampilkan BERURUTAN (lihat UIKit.prompt_queue).
+
+## Kumpulkan reminder pemupukan yang jatuh tempo sejak pengecekan terakhir.
+## Memanggil ini MENANDAI blok sebagai sudah diingatkan, jadi panggil sekali
+## saja per perubahan hari.
+## Hasil siap dipakai UIKit.prompt_queue(): [{title, body, accent}, ...]
+func collect_fert_reminders() -> Array:
+	var out: Array = []
+	for i in plots.size():
+		var p: Dictionary = plots[i]
+		if p.get("state") != "tanam":
+			continue
+		var now_m := Agronomy.block_age_months(p)
+		# Blok yang baru dikenali (mis. kebun demo berumur 8 tahun) TIDAK
+		# memuntahkan ratusan reminder masa lalu — mulai dari bulan saat ini.
+		if not p.has("fert_reminded_month"):
+			p["fert_reminded_month"] = now_m
+			continue
+		var last := int(p["fert_reminded_month"])
+		if now_m <= last:
+			continue
+		p["fert_reminded_month"] = now_m
+		for b in Database.fert_months_between(last, now_m):
+			if int(b) <= 0:
+				continue   # bulan 0 = dosis lubang tanam, sudah saat menanam
+			var plan: Dictionary = Agronomy.monthly_fert_plan(p, int(b))
+			if plan.is_empty():
+				continue
+			out.append(_fert_reminder_item(p, plan))
+	return out
+
+func _fert_reminder_item(block: Dictionary, plan: Dictionary) -> Dictionary:
+	var blok_id := String(block.get("id", "?"))
+	var bulan := int(plan.get("bulan", 0))
+	var dose := {}
+	var total_kg := 0.0
+	for c in plan.get("components", []):
+		dose[c["code"]] = c["g_per_palm"]
+		total_kg += float(c["kg_total"])
+	var body := "Bulan ke-%d. Lakukan pemupukan pada blok %s sebesar %s per pokok." % [
+		bulan, blok_id, Agronomy.dose_text(dose)]
+	body += "\n\nTotal %.1f kg untuk %d pokok · perkiraan biaya Rp%s." % [
+		total_kg, int(plan.get("palms", 0)), _fmt(int(plan.get("total_cost", 0)))]
+	var warn := String(plan.get("warning", ""))
+	if warn != "":
+		body += "\n\n⚠ " + warn
+	return {
+		"title": "Pemupukan blok %s" % blok_id,
+		"body": body,
+		"accent": warn != "",
+	}
+
 func active_block() -> Dictionary:
 	# Pastikan plots punya 9 slot (bisa kosong kalau game belum dimulai lewat start_new_game).
 	if plots.is_empty():
@@ -395,6 +482,7 @@ func start_new_game(pid: String, diff: String = "normal") -> void:
 	tph = {}
 	break_even_day = -1
 	field_task_results = {}
+	field_task_played = {}
 	tutorial_shown = false
 
 ## Hasil minigame Tugas Lapangan: { task_id: {stars:int, mode:"self"|"team", day:int} }
@@ -858,9 +946,59 @@ func field_task_delegate_cost(hk: float) -> int:
 	var wage := float(Database.params.get("daily_wage_rp", 120000))
 	return int(round(hk * wage / field_task_speed()))
 
+# ------------------------------------------------- syarat & limit harian
+# Tugas lapangan hanya bisa dimainkan 1x per hari (Catatan Perbaikan).
+# `field_task_played` mencatat hari terakhir tiap tugas dimainkan.
+
+var field_task_played: Dictionary = {}   # task_id -> hari terakhir dimainkan
+
+## Sudah dimainkan hari ini?
+func field_task_played_today(task_id: String) -> bool:
+	return int(field_task_played.get(task_id, -1)) == day
+
+## Apakah syarat tugas terpenuhi (field "requires" di field_tasks.json).
+func field_task_requirement_met(task: Dictionary) -> bool:
+	match String(task.get("requires", "none")):
+		"land_or_nursery": return has_planted_land() or has_nursery()
+		"tm":              return has_tm_land()
+		"nursery":         return has_nursery()
+		_:                 return true
+
+## Alasan tugas terkunci; "" kalau tugas bisa dimainkan.
+func field_task_lock_reason(task: Dictionary) -> String:
+	if not field_task_requirement_met(task):
+		return String(task.get("deny_msg", "Syarat tugas belum terpenuhi"))
+	if field_task_played_today(String(task.get("id", ""))):
+		return "Tugas ini sudah dikerjakan hari ini. Coba lagi besok."
+	return ""
+
+## Hadiah uang per bintang, dari field_tasks.json.
+func field_task_reward_rp(stars: int) -> int:
+	var tbl: Dictionary = Database.field_tasks.get("reward_per_star_rp", {})
+	return int(tbl.get(str(stars), 0))
+
+## Daftar id tugas yang ikut hitungan bonus "selesaikan semua minigame".
+func field_task_bonus_ids() -> Array:
+	var out: Array = []
+	for t in Database.field_tasks.get("tasks", []):
+		if bool(t.get("reward_eligible", false)):
+			out.append(String(t.get("id", "")))
+	return out
+
+## Sudah menyelesaikan SEMUA minigame berhadiah hari ini?
+func field_tasks_all_done_today() -> bool:
+	var ids := field_task_bonus_ids()
+	if ids.is_empty():
+		return false
+	for id in ids:
+		if int(field_task_played.get(id, -1)) != day:
+			return false
+	return true
+
 ## Simpan hasil tugas lapangan (best-of untuk mode sendiri).
 ## mode = "self" | "team". Tim selalu 2 bintang.
-func complete_field_task(task_id: String, stars: int, mode: String) -> void:
+## Mengembalikan rincian hadiah: { "reward": int, "bonus": int }.
+func complete_field_task(task_id: String, stars: int, mode: String) -> Dictionary:
 	var existing: Dictionary = field_task_results.get(task_id, {})
 	var prev_stars := int(existing.get("stars", 0))
 	var prev_mode  := String(existing.get("mode", ""))
@@ -872,8 +1010,24 @@ func complete_field_task(task_id: String, stars: int, mode: String) -> void:
 		should_update = (prev_mode == "" ) or (prev_mode == "team" and stars > prev_stars)
 	if should_update:
 		field_task_results[task_id] = { "stars": stars, "mode": mode, "day": day }
+
+	# Hadiah uang HANYA untuk permainan sendiri dan HANYA sekali sehari.
+	# Delegasi ke tim tidak berhadiah (user tidak memainkannya).
+	var reward := 0
+	var bonus := 0
+	if mode == "self" and not field_task_played_today(task_id):
+		field_task_played[task_id] = day
+		reward = field_task_reward_rp(stars)
+		if reward > 0:
+			earn(reward, "Hadiah tugas lapangan: %s (%d bintang)" % [task_id, stars])
+		if field_tasks_all_done_today():
+			bonus = int(Database.field_tasks.get("all_tasks_bonus_rp", 0))
+			if bonus > 0:
+				earn(bonus, "Bonus menyelesaikan semua tugas lapangan")
+
 	apply_field_task_effect(task_id, stars)
 	emit_signal("blocks_changed")
+	return { "reward": reward, "bonus": bonus }
 
 ## Hook efek gameplay dari hasil tugas lapangan (TODO: sambungkan ke Agronomy).
 func apply_field_task_effect(task_id: String, stars: int) -> void:
@@ -882,6 +1036,8 @@ func apply_field_task_effect(task_id: String, stars: int) -> void:
 	pass
 
 ## Reset hasil tugas lapangan (tiap rotasi blok).
+## Catatan: field_task_played TIDAK ikut direset — limit "1x sehari" terikat
+## ke tanggal, bukan ke rotasi blok.
 func reset_field_tasks() -> void:
 	field_task_results = {}
 	emit_signal("blocks_changed")
@@ -953,6 +1109,7 @@ func save_game() -> void:
 		"purchase_history": purchase_history, "break_even_day": break_even_day,
 		"difficulty": difficulty,
 		"field_task_results": field_task_results,
+		"field_task_played": field_task_played,
 		"tutorial_shown": tutorial_shown,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -1006,6 +1163,8 @@ func load_game() -> bool:
 	difficulty = str(data.get("difficulty", "normal"))
 	var ftr = data.get("field_task_results", {})
 	field_task_results = ftr if ftr is Dictionary else {}
+	var ftp = data.get("field_task_played", {})
+	field_task_played = ftp if ftp is Dictionary else {}
 	tutorial_shown = bool(data.get("tutorial_shown", false))
 	visiting = {}
 	emit_signal("cosmetics_changed")

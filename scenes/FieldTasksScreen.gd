@@ -4,16 +4,31 @@ extends Control
 
 const PLAY := "res://scenes/FieldTaskPlay.tscn"
 
+## Tap mouse ATAU sentuh layar. InputEventMouseButton saja tidak cukup andal
+## di Android, jadi dua-duanya diterima.
+static func _is_tap(ev: InputEvent) -> bool:
+	return (ev is InputEventMouseButton and ev.pressed) \
+		or (ev is InputEventScreenTouch and ev.pressed)
+
 var _tasks: Array = []
 var _sheet: CanvasLayer
 var _selected_task: Dictionary = {}
 var _pin_nodes: Array = []   # [{ task, pin_ctrl }]
+var _list_holder: VBoxContainer
 
 func _ready() -> void:
 	var raw = Database.field_tasks
 	_tasks = raw.get("tasks", []) if raw is Dictionary else []
 	_build()
 	GameState.blocks_changed.connect(func(): _refresh_pins(); _refresh_list())
+	if OS.get_cmdline_user_args().has("shotfieldtasks"):
+		call_deferred("_capture")
+
+func _capture() -> void:
+	await get_tree().create_timer(0.8).timeout
+	get_viewport().get_texture().get_image().save_png("user://fieldtasks.png")
+	print("[fieldtasks] screenshot saved")
+	get_tree().quit()
 
 # ─────────────────────────────────────────────────────── BUILD ─────
 
@@ -135,13 +150,15 @@ func _make_stats_strip() -> Control:
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 0)
 	strip.add_child(h)
-	var done := _done_count()
-	var stars := _total_stars()
-	var hk := _team_hk()
+	# Hitungan dibuat dinamis: jumlah tugas kini 8 (termasuk Transplanting),
+	# dan hanya tugas reward_eligible yang masuk target harian.
+	var n_tasks: int = maxi(_tasks.size(), 1)
+	var today := _played_today_count()
+	var n_bonus: int = maxi(GameState.field_task_bonus_ids().size(), 1)
 	var cells := [
-		["SELESAI", "%d/7" % done],
-		["BINTANG", "%d/21" % stars],
-		["HK TIM", "%.1f" % hk],
+		["HARI INI", "%d/%d" % [today, n_bonus]],
+		["BINTANG", "%d/%d" % [_total_stars(), n_tasks * 3]],
+		["HK TIM", "%.1f" % _team_hk()],
 	]
 	for i in cells.size():
 		if i > 0: h.add_child(UIKit.vrule())
@@ -166,6 +183,23 @@ func _make_map() -> Control:
 	map.set_anchors_preset(Control.PRESET_FULL_RECT)
 	map.clip_contents = true
 	outer.add_child(map)
+
+	# Latar belakang peta blok (foto lampiran). Diberi scrim terang supaya pin
+	# bernomor dan garis grid tetap kontras di atas foto.
+	var map_bg := String((Database.field_tasks as Dictionary).get("map_bg", ""))
+	if map_bg != "" and ResourceLoader.exists(map_bg):
+		var tr := TextureRect.new()
+		tr.texture = load(map_bg)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		map.add_child(tr)
+		var scrim := ColorRect.new()
+		scrim.color = Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.55)
+		scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
+		scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		map.add_child(scrim)
 
 	# Grid tipis
 	for xi in 5:
@@ -228,7 +262,7 @@ func _make_pin(num: int, task: Dictionary, fx: float, fy: float) -> Control:
 	pin.set_meta("num", num)
 	pin.mouse_filter = Control.MOUSE_FILTER_STOP
 	pin.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed:
+		if _is_tap(ev):
 			_open_sheet(task))
 
 	# Position via anchors
@@ -277,16 +311,22 @@ func _refresh_pins() -> void:
 # ─────────────────────────────────────────────────────── DAFTAR ────
 
 func _make_task_list() -> Control:
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
+	_list_holder = VBoxContainer.new()
+	_list_holder.add_theme_constant_override("separation", 0)
+	_fill_task_list()
+	return _list_holder
+
+func _fill_task_list() -> void:
+	for c in _list_holder.get_children():
+		_list_holder.remove_child(c)
+		c.queue_free()
 	# border top
 	var top_border := ColorRect.new()
 	top_border.color = UIKit.INK
 	top_border.custom_minimum_size = Vector2(0, 2)
-	v.add_child(top_border)
+	_list_holder.add_child(top_border)
 	for i in _tasks.size():
-		v.add_child(_task_row(_tasks[i], i + 1))
-	return v
+		_list_holder.add_child(_task_row(_tasks[i], i + 1))
 
 func _task_row(task: Dictionary, num: int) -> Control:
 	var row := PanelContainer.new()
@@ -296,8 +336,12 @@ func _task_row(task: Dictionary, num: int) -> Control:
 	row.add_theme_stylebox_override("panel", sb2)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	row.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed:
+		if _is_tap(ev):
 			_open_sheet(task))
+	# Tugas yang syaratnya belum terpenuhi diredupkan — tetap bisa ditap agar
+	# user melihat prompt alasannya.
+	if not GameState.field_task_requirement_met(task):
+		row.modulate = Color(1, 1, 1, 0.5)
 
 	var m := MarginContainer.new()
 	m.add_theme_constant_override("margin_left", 16)
@@ -319,13 +363,13 @@ func _task_row(task: Dictionary, num: int) -> Control:
 	var vl := VBoxContainer.new()
 	vl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vl.add_theme_constant_override("separation", 2)
-	var mech_label := {"hold": "Tahan", "timing": "Timing", "targets": "Target"}
+	var mech_label := {"hold": "Tahan", "timing": "Timing", "targets": "Target", "catch": "Tangkap"}
 	vl.add_child(UIKit.label(task.get("name", "?"), 14, UIKit.INK, 800))
 	vl.add_child(UIKit.meta("%s · %s" % [
 		mech_label.get(String(task.get("mech", "")), "?"), task.get("worker", "?")], 11))
 	h.add_child(vl)
 
-	# Bintang
+	# Bintang — kuning emas (sebelumnya merah ACCENT)
 	var stars_box := HBoxContainer.new()
 	stars_box.add_theme_constant_override("separation", 2)
 	var result: Dictionary = GameState.field_task_results.get(task.get("id", ""), {})
@@ -334,16 +378,23 @@ func _task_row(task: Dictionary, num: int) -> Control:
 		var sq := PanelContainer.new()
 		sq.custom_minimum_size = Vector2(9, 9)
 		sq.add_theme_stylebox_override("panel",
-			UIKit.box(UIKit.ACCENT if s < stars else UIKit.N300, Color(0,0,0,0), 0, 0))
+			UIKit.box(UIKit.GOLD if s < stars else UIKit.N300, Color(0,0,0,0), 0, 0))
 		stars_box.add_child(sq)
 	h.add_child(stars_box)
 
-	# Status
+	# Status — tugas terkunci ditandai di sini (syarat belum terpenuhi atau
+	# sudah dimainkan hari ini).
 	var mode := String(result.get("mode", ""))
 	var status_txt := "BELUM" if mode == "" else ("SENDIRI" if mode == "self" else "TIM")
 	var status_col := UIKit.N600 if mode == "" else UIKit.INK
+	if not GameState.field_task_requirement_met(task):
+		status_txt = "TERKUNCI"
+		status_col = UIKit.N500
+	elif GameState.field_task_played_today(String(task.get("id", ""))):
+		status_txt = "HARI INI"
+		status_col = UIKit.N500
 	var status_lbl := UIKit.label(status_txt, 10, status_col, 600)
-	status_lbl.custom_minimum_size = Vector2(44, 0)
+	status_lbl.custom_minimum_size = Vector2(52, 0)
 	status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	h.add_child(status_lbl)
 
@@ -351,12 +402,22 @@ func _task_row(task: Dictionary, num: int) -> Control:
 	h.add_child(UIKit.icon("chevron-right", 16, UIKit.N500))
 	return row
 
+## Bangun ulang baris daftar. Perlu dipanggil setelah delegasi ke tim karena
+## bintang/status berubah tanpa ganti scene.
 func _refresh_list() -> void:
-	pass  # scroll container auto-updates saat tree berubah karena blocks_changed
+	if _list_holder != null:
+		_fill_task_list()
 
 # ──────────────────────────────────────────── BOTTOM SHEET ─────────
 
 func _open_sheet(task: Dictionary) -> void:
+	# Syarat belum terpenuhi -> prompt modal, sheet tidak dibuka sama sekali.
+	# (mis. "Tidak ada areal TM, tugas tidak bisa dilakukan")
+	if not GameState.field_task_requirement_met(task):
+		UIKit.prompt(self, String(task.get("name", "Tugas")),
+			String(task.get("deny_msg", "Syarat tugas belum terpenuhi")),
+			"Mengerti", Callable(), true)
+		return
 	_selected_task = task
 	if _sheet: _sheet.queue_free()
 	_sheet = CanvasLayer.new()
@@ -366,7 +427,7 @@ func _open_sheet(task: Dictionary) -> void:
 	backdrop.color = Color(UIKit.INK.r, UIKit.INK.g, UIKit.INK.b, 0.55)
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
 	backdrop.gui_input.connect(func(ev):
-		if ev is InputEventMouseButton and ev.pressed: _close_sheet())
+		if _is_tap(ev): _close_sheet())
 	_sheet.add_child(backdrop)
 
 	var sheet := PanelContainer.new()
@@ -394,7 +455,7 @@ func _open_sheet(task: Dictionary) -> void:
 	var hv := VBoxContainer.new()
 	hv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hv.add_theme_constant_override("separation", 2)
-	var mech_label := {"hold": "Tahan", "timing": "Timing", "targets": "Target"}
+	var mech_label := {"hold": "Tahan", "timing": "Timing", "targets": "Target", "catch": "Tangkap"}
 	var num_idx := _tasks.find(task) + 1
 	hv.add_child(UIKit.kicker("%02d · %s · %s" % [num_idx, mech_label.get(String(task.get("mech","")), "?"), task.get("verb","")], UIKit.ACCENT_700))
 	hv.add_child(UIKit.label(task.get("name", "?"), 22, UIKit.INK, 800))
@@ -431,12 +492,19 @@ func _open_sheet(task: Dictionary) -> void:
 	gh.add_child(team_col)
 	v.add_child(grid)
 
-	# Tombol primary: mainkan sendiri
+	# Tombol primary: mainkan sendiri — dikunci kalau sudah dimainkan hari ini
+	# (limit 1x sehari). Delegasi ke tim tetap boleh karena itu membayar upah,
+	# bukan memainkan minigame.
+	var played := GameState.field_task_played_today(String(task.get("id", "")))
 	var play_btn := UIKit.btn("", func(): _start_play(task), "primary", 20, 52)
-	play_btn.text = "%s sendiri  ›" % task.get("verb", "Main")
+	play_btn.text = "Sudah dikerjakan hari ini" if played else "%s sendiri  ›" % task.get("verb", "Main")
+	play_btn.disabled = played
 	play_btn.icon = load("res://assets/ui/icons/gamepad-2.svg")
 	play_btn.add_theme_color_override("icon_normal_color", UIKit.BG)
 	v.add_child(play_btn)
+	if played:
+		v.add_child(UIKit.wrap(UIKit.meta(
+			"Tiap tugas hanya bisa dimainkan satu kali sehari. Lanjutkan hari untuk mencobanya lagi.")))
 
 	# Tombol secondary: delegasi tim
 	var delegate_btn := UIKit.btn("", func(): _do_delegate(task), "secondary", 14, 44)
@@ -464,14 +532,13 @@ func _sheet_col(title: String, sub: String, note: String) -> Control:
 	return m
 
 func _self_sub(task: Dictionary) -> String:
-	var mech := String(task.get("mech", ""))
 	var rounds := int(task.get("rounds", 5))
-	if mech == "hold":
-		return "%d putaran tahan" % rounds
-	elif mech == "timing":
-		return "%d putaran timing" % rounds
-	else:
-		return "Ketuk target, lawan waktu"
+	match String(task.get("mech", "")):
+		"hold":    return "%d putaran tahan" % rounds
+		"timing":  return "%d putaran timing" % rounds
+		"catch":   return "Tangkap %d hama bergerak" % int(
+			(task.get("catch", {}) as Dictionary).get("need", 5))
+		_:         return "%d ronde ketuk target" % rounds
 
 func _fmt_hk(hk) -> String:
 	var v := float(hk)
@@ -500,10 +567,11 @@ func _do_delegate(task: Dictionary) -> void:
 
 # ─────────────────────────────────────────────────────── UTIL ──────
 
-func _done_count() -> int:
+## Berapa tugas berhadiah yang sudah dimainkan sendiri HARI INI.
+func _played_today_count() -> int:
 	var n := 0
-	for t in _tasks:
-		if GameState.field_task_results.has(t.get("id", "")): n += 1
+	for id in GameState.field_task_bonus_ids():
+		if GameState.field_task_played_today(String(id)): n += 1
 	return n
 
 func _total_stars() -> int:

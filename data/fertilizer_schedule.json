@@ -1,0 +1,2449 @@
+{
+ "_catatan": "Jadwal pemupukan bulan-per-bulan dari 'rekomendasi pemupukan.xlsx' (lampiran Catatan Perbaikan). unit = gram per POKOK per aplikasi. hari = bulan x 30, dipakai untuk mencocokkan umur blok (GameState.day - planting_day). bulan 0 = dosis lubang tanam saat tanam. Kode pupuk mengikuti params.json fertilizer_price_rp_per_kg.",
+ "unit": "gram_per_pokok",
+ "palms_per_ha": 143,
+ "schedule": [
+  {
+   "bulan": 0,
+   "hari": 0,
+   "pupuk": {
+    "RPH": 500.0
+   }
+  },
+  {
+   "bulan": 1,
+   "hari": 30,
+   "pupuk": {
+    "MOP": 300.0
+   }
+  },
+  {
+   "bulan": 3,
+   "hari": 90,
+   "pupuk": {
+    "Urea": 400.0
+   }
+  },
+  {
+   "bulan": 5,
+   "hari": 150,
+   "pupuk": {
+    "MOP": 400.0
+   }
+  },
+  {
+   "bulan": 7,
+   "hari": 210,
+   "pupuk": {
+    "Kieserite": 400.0,
+    "HGFB": 15.0
+   }
+  },
+  {
+   "bulan": 9,
+   "hari": 270,
+   "pupuk": {
+    "Urea": 400.0,
+    "MOP": 200.0,
+    "CuSO4": 15.0
+   }
+  },
+  {
+   "bulan": 11,
+   "hari": 330,
+   "pupuk": {
+    "RPH": 200.0
+   }
+  },
+  {
+   "bulan": 13,
+   "hari": 390,
+   "pupuk": {
+    "RPH": 350.0,
+    "HGFB": 50.0
+   }
+  },
+  {
+   "bulan": 15,
+   "hari": 450,
+   "pupuk": {
+    "Urea": 500.0,
+    "MOP": 500.0,
+    "Kieserite": 300.0,
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 18,
+   "hari": 540,
+   "pupuk": {
+    "Urea": 500.0,
+    "MOP": 500.0
+   }
+  },
+  {
+   "bulan": 22,
+   "hari": 660,
+   "pupuk": {
+    "Urea": 500.0,
+    "MOP": 500.0,
+    "Kieserite": 300.0
+   }
+  },
+  {
+   "bulan": 25,
+   "hari": 750,
+   "pupuk": {
+    "RPH": 350.0,
+    "Kieserite": 350.0,
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 27,
+   "hari": 810,
+   "pupuk": {
+    "Urea": 500.0,
+    "MOP": 500.0
+   }
+  },
+  {
+   "bulan": 29,
+   "hari": 870,
+   "pupuk": {
+    "Urea": 1000.0,
+    "MOP": 750.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 32,
+   "hari": 960,
+   "pupuk": {
+    "Urea": 1000.0,
+    "MOP": 750.0
+   }
+  },
+  {
+   "bulan": 34,
+   "hari": 1020,
+   "pupuk": {
+    "MOP": 750.0
+   }
+  },
+  {
+   "bulan": 37,
+   "hari": 1110,
+   "pupuk": {
+    "Urea": 1000.0
+   }
+  },
+  {
+   "bulan": 38,
+   "hari": 1140,
+   "pupuk": {
+    "MOP": 1000.0
+   }
+  },
+  {
+   "bulan": 39,
+   "hari": 1170,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 40,
+   "hari": 1200,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 41,
+   "hari": 1230,
+   "pupuk": {
+    "RPH": 1000.0
+   }
+  },
+  {
+   "bulan": 42,
+   "hari": 1260,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 43,
+   "hari": 1290,
+   "pupuk": {
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 44,
+   "hari": 1320,
+   "pupuk": {
+    "Urea": 1000.0,
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 45,
+   "hari": 1350,
+   "pupuk": {
+    "Dolomit": 1000.0
+   }
+  },
+  {
+   "bulan": 46,
+   "hari": 1380,
+   "pupuk": {
+    "MOP": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 47,
+   "hari": 1410,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 49,
+   "hari": 1470,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 50,
+   "hari": 1500,
+   "pupuk": {
+    "MOP": 1200.0
+   }
+  },
+  {
+   "bulan": 51,
+   "hari": 1530,
+   "pupuk": {
+    "Kieserite": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 52,
+   "hari": 1560,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 53,
+   "hari": 1590,
+   "pupuk": {
+    "RPH": 1200.0
+   }
+  },
+  {
+   "bulan": 54,
+   "hari": 1620,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 55,
+   "hari": 1650,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 56,
+   "hari": 1680,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 57,
+   "hari": 1710,
+   "pupuk": {
+    "Dolomit": 1000.0
+   }
+  },
+  {
+   "bulan": 58,
+   "hari": 1740,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 59,
+   "hari": 1770,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 61,
+   "hari": 1830,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 62,
+   "hari": 1860,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 63,
+   "hari": 1890,
+   "pupuk": {
+    "Kieserite": 1500.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 64,
+   "hari": 1920,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 65,
+   "hari": 1950,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 66,
+   "hari": 1980,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 67,
+   "hari": 2010,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 68,
+   "hari": 2040,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 69,
+   "hari": 2070,
+   "pupuk": {
+    "Dolomit": 1000.0
+   }
+  },
+  {
+   "bulan": 70,
+   "hari": 2100,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 71,
+   "hari": 2130,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 73,
+   "hari": 2190,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 74,
+   "hari": 2220,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 75,
+   "hari": 2250,
+   "pupuk": {
+    "Kieserite": 1500.0,
+    "HGFB": 100.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 77,
+   "hari": 2310,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 78,
+   "hari": 2340,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 79,
+   "hari": 2370,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 80,
+   "hari": 2400,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 81,
+   "hari": 2430,
+   "pupuk": {
+    "Dolomit": 1000.0
+   }
+  },
+  {
+   "bulan": 82,
+   "hari": 2460,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 83,
+   "hari": 2490,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 85,
+   "hari": 2550,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 86,
+   "hari": 2580,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 87,
+   "hari": 2610,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 88,
+   "hari": 2640,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 89,
+   "hari": 2670,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 90,
+   "hari": 2700,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 91,
+   "hari": 2730,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 92,
+   "hari": 2760,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 93,
+   "hari": 2790,
+   "pupuk": {
+    "Dolomit": 400.0
+   }
+  },
+  {
+   "bulan": 94,
+   "hari": 2820,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 95,
+   "hari": 2850,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 97,
+   "hari": 2910,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 98,
+   "hari": 2940,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 99,
+   "hari": 2970,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 100,
+   "hari": 3000,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 101,
+   "hari": 3030,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 102,
+   "hari": 3060,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 103,
+   "hari": 3090,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 104,
+   "hari": 3120,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 105,
+   "hari": 3150,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 106,
+   "hari": 3180,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 107,
+   "hari": 3210,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 109,
+   "hari": 3270,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 110,
+   "hari": 3300,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 111,
+   "hari": 3330,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 112,
+   "hari": 3360,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 113,
+   "hari": 3390,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 114,
+   "hari": 3420,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 115,
+   "hari": 3450,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 116,
+   "hari": 3480,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 117,
+   "hari": 3510,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 118,
+   "hari": 3540,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 119,
+   "hari": 3570,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 121,
+   "hari": 3630,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 122,
+   "hari": 3660,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 123,
+   "hari": 3690,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 124,
+   "hari": 3720,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 125,
+   "hari": 3750,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 126,
+   "hari": 3780,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 127,
+   "hari": 3810,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 128,
+   "hari": 3840,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 129,
+   "hari": 3870,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 130,
+   "hari": 3900,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 131,
+   "hari": 3930,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 133,
+   "hari": 3990,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 134,
+   "hari": 4020,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 135,
+   "hari": 4050,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 136,
+   "hari": 4080,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 137,
+   "hari": 4110,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 138,
+   "hari": 4140,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 139,
+   "hari": 4170,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 140,
+   "hari": 4200,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 141,
+   "hari": 4230,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 142,
+   "hari": 4260,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 143,
+   "hari": 4290,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 145,
+   "hari": 4350,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 146,
+   "hari": 4380,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 147,
+   "hari": 4410,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 148,
+   "hari": 4440,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 149,
+   "hari": 4470,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 150,
+   "hari": 4500,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 151,
+   "hari": 4530,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 152,
+   "hari": 4560,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 153,
+   "hari": 4590,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 154,
+   "hari": 4620,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 155,
+   "hari": 4650,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 157,
+   "hari": 4710,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 158,
+   "hari": 4740,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 159,
+   "hari": 4770,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 160,
+   "hari": 4800,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 161,
+   "hari": 4830,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 162,
+   "hari": 4860,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 163,
+   "hari": 4890,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 164,
+   "hari": 4920,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 165,
+   "hari": 4950,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 166,
+   "hari": 4980,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 167,
+   "hari": 5010,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 169,
+   "hari": 5070,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 170,
+   "hari": 5100,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 171,
+   "hari": 5130,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 172,
+   "hari": 5160,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 173,
+   "hari": 5190,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 174,
+   "hari": 5220,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 175,
+   "hari": 5250,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 176,
+   "hari": 5280,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 177,
+   "hari": 5310,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 178,
+   "hari": 5340,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 179,
+   "hari": 5370,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 181,
+   "hari": 5430,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 182,
+   "hari": 5460,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 183,
+   "hari": 5490,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 184,
+   "hari": 5520,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 185,
+   "hari": 5550,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 186,
+   "hari": 5580,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 187,
+   "hari": 5610,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 188,
+   "hari": 5640,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 189,
+   "hari": 5670,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 190,
+   "hari": 5700,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 191,
+   "hari": 5730,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 193,
+   "hari": 5790,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 194,
+   "hari": 5820,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 195,
+   "hari": 5850,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 196,
+   "hari": 5880,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 197,
+   "hari": 5910,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 198,
+   "hari": 5940,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 199,
+   "hari": 5970,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 200,
+   "hari": 6000,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 201,
+   "hari": 6030,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 202,
+   "hari": 6060,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 203,
+   "hari": 6090,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 205,
+   "hari": 6150,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 206,
+   "hari": 6180,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 207,
+   "hari": 6210,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 208,
+   "hari": 6240,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 209,
+   "hari": 6270,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 210,
+   "hari": 6300,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 211,
+   "hari": 6330,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 212,
+   "hari": 6360,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 213,
+   "hari": 6390,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 214,
+   "hari": 6420,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 215,
+   "hari": 6450,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 217,
+   "hari": 6510,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 218,
+   "hari": 6540,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 219,
+   "hari": 6570,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 220,
+   "hari": 6600,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 221,
+   "hari": 6630,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 222,
+   "hari": 6660,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 223,
+   "hari": 6690,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 224,
+   "hari": 6720,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 225,
+   "hari": 6750,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 226,
+   "hari": 6780,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 227,
+   "hari": 6810,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 229,
+   "hari": 6870,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 230,
+   "hari": 6900,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 231,
+   "hari": 6930,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 232,
+   "hari": 6960,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 233,
+   "hari": 6990,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 234,
+   "hari": 7020,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 235,
+   "hari": 7050,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 236,
+   "hari": 7080,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 237,
+   "hari": 7110,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 238,
+   "hari": 7140,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 239,
+   "hari": 7170,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 241,
+   "hari": 7230,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 242,
+   "hari": 7260,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 243,
+   "hari": 7290,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 244,
+   "hari": 7320,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 245,
+   "hari": 7350,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 246,
+   "hari": 7380,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 247,
+   "hari": 7410,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 248,
+   "hari": 7440,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 249,
+   "hari": 7470,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 250,
+   "hari": 7500,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 251,
+   "hari": 7530,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 253,
+   "hari": 7590,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 254,
+   "hari": 7620,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 255,
+   "hari": 7650,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 256,
+   "hari": 7680,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 257,
+   "hari": 7710,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 258,
+   "hari": 7740,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 259,
+   "hari": 7770,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 260,
+   "hari": 7800,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 261,
+   "hari": 7830,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 262,
+   "hari": 7860,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 263,
+   "hari": 7890,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 265,
+   "hari": 7950,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 266,
+   "hari": 7980,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 267,
+   "hari": 8010,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 268,
+   "hari": 8040,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 269,
+   "hari": 8070,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 270,
+   "hari": 8100,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 271,
+   "hari": 8130,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 272,
+   "hari": 8160,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 273,
+   "hari": 8190,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 274,
+   "hari": 8220,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 275,
+   "hari": 8250,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 277,
+   "hari": 8310,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 278,
+   "hari": 8340,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 279,
+   "hari": 8370,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 280,
+   "hari": 8400,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 281,
+   "hari": 8430,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 282,
+   "hari": 8460,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 283,
+   "hari": 8490,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 284,
+   "hari": 8520,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 285,
+   "hari": 8550,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 286,
+   "hari": 8580,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 287,
+   "hari": 8610,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 289,
+   "hari": 8670,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 290,
+   "hari": 8700,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 291,
+   "hari": 8730,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 292,
+   "hari": 8760,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 293,
+   "hari": 8790,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 294,
+   "hari": 8820,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 295,
+   "hari": 8850,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 296,
+   "hari": 8880,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 297,
+   "hari": 8910,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 298,
+   "hari": 8940,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 299,
+   "hari": 8970,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 301,
+   "hari": 9030,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 302,
+   "hari": 9060,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 303,
+   "hari": 9090,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 304,
+   "hari": 9120,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 305,
+   "hari": 9150,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 306,
+   "hari": 9180,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 307,
+   "hari": 9210,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 308,
+   "hari": 9240,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 309,
+   "hari": 9270,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 310,
+   "hari": 9300,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 311,
+   "hari": 9330,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 313,
+   "hari": 9390,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 314,
+   "hari": 9420,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 315,
+   "hari": 9450,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 316,
+   "hari": 9480,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 317,
+   "hari": 9510,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 318,
+   "hari": 9540,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 319,
+   "hari": 9570,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 320,
+   "hari": 9600,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 321,
+   "hari": 9630,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 322,
+   "hari": 9660,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 323,
+   "hari": 9690,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 325,
+   "hari": 9750,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 326,
+   "hari": 9780,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 327,
+   "hari": 9810,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 328,
+   "hari": 9840,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 329,
+   "hari": 9870,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 330,
+   "hari": 9900,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 331,
+   "hari": 9930,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 332,
+   "hari": 9960,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 333,
+   "hari": 9990,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 334,
+   "hari": 10020,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 335,
+   "hari": 10050,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 337,
+   "hari": 10110,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 338,
+   "hari": 10140,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 339,
+   "hari": 10170,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 340,
+   "hari": 10200,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 341,
+   "hari": 10230,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 342,
+   "hari": 10260,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 343,
+   "hari": 10290,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 344,
+   "hari": 10320,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 345,
+   "hari": 10350,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 346,
+   "hari": 10380,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 347,
+   "hari": 10410,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 349,
+   "hari": 10470,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 350,
+   "hari": 10500,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 351,
+   "hari": 10530,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 352,
+   "hari": 10560,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 353,
+   "hari": 10590,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 354,
+   "hari": 10620,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 355,
+   "hari": 10650,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 356,
+   "hari": 10680,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 357,
+   "hari": 10710,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 358,
+   "hari": 10740,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 359,
+   "hari": 10770,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 361,
+   "hari": 10830,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 362,
+   "hari": 10860,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 363,
+   "hari": 10890,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 364,
+   "hari": 10920,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 365,
+   "hari": 10950,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 366,
+   "hari": 10980,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 367,
+   "hari": 11010,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 368,
+   "hari": 11040,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 369,
+   "hari": 11070,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 370,
+   "hari": 11100,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 371,
+   "hari": 11130,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  },
+  {
+   "bulan": 373,
+   "hari": 11190,
+   "pupuk": {
+    "Urea": 1500.0
+   }
+  },
+  {
+   "bulan": 374,
+   "hari": 11220,
+   "pupuk": {
+    "MOP": 1500.0
+   }
+  },
+  {
+   "bulan": 375,
+   "hari": 11250,
+   "pupuk": {
+    "Kieserite": 1000.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 376,
+   "hari": 11280,
+   "pupuk": {
+    "HGFB": 100.0
+   }
+  },
+  {
+   "bulan": 377,
+   "hari": 11310,
+   "pupuk": {
+    "RPH": 1500.0
+   }
+  },
+  {
+   "bulan": 378,
+   "hari": 11340,
+   "pupuk": {
+    "CuSO4": 50.0
+   }
+  },
+  {
+   "bulan": 379,
+   "hari": 11370,
+   "pupuk": {
+    "HGFB": 60.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 380,
+   "hari": 11400,
+   "pupuk": {
+    "Urea": 1200.0
+   }
+  },
+  {
+   "bulan": 381,
+   "hari": 11430,
+   "pupuk": {
+    "Dolomit": 500.0
+   }
+  },
+  {
+   "bulan": 382,
+   "hari": 11460,
+   "pupuk": {
+    "MOP": 1200.0,
+    "MgSO4": 50.0
+   }
+  },
+  {
+   "bulan": 383,
+   "hari": 11490,
+   "pupuk": {
+    "HGFB": 60.0
+   }
+  }
+ ]
+}

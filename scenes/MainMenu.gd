@@ -37,7 +37,25 @@ func _ready() -> void:
 		get_tree().call_deferred("change_scene_to_file", "res://scenes/Story.tscn"); return
 	if a.has("shotdash"):
 		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
+		GameState.tutorial_shown = true   # overlay tutorial menutupi layar di screenshot
 		get_tree().call_deferred("change_scene_to_file", "res://scenes/DashboardScreen.tscn"); return
+	if a.has("shotfieldtasks"):
+		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
+		GameState.tutorial_shown = true
+		get_tree().call_deferred("change_scene_to_file", "res://scenes/FieldTasksScreen.tscn"); return
+	# shotminigame=<id tugas>, mis. "-- shotminigame inspeksi"
+	if a.has("shotminigame"):
+		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
+		GameState.tutorial_shown = true
+		var want := ""
+		for i in a.size():
+			if String(a[i]) == "shotminigame" and i + 1 < a.size():
+				want = String(a[i + 1])
+		for t in Database.field_tasks.get("tasks", []):
+			if want == "" or String(t.get("id", "")) == want:
+				GameState.active_field_task = t
+				break
+		get_tree().call_deferred("change_scene_to_file", "res://scenes/FieldTaskPlay.tscn"); return
 	if a.has("shotland"):
 		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
 		GameState.buy_target_plot = 5
@@ -370,10 +388,10 @@ func _make_button_zone() -> Control:
 	else:
 		v.add_child(UIKit.btn("Permainan baru  ›", _on_new, "primary", 15, 52))
 
-	v.add_child(UIKit.btn("Dashboard kebun (demo)", func():
-		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()
-		get_tree().change_scene_to_file("res://scenes/DashboardScreen.tscn"),
-		"secondary", 14, 48))
+	# Tombol "Dashboard kebun (demo)" dihapus sesuai Catatan Perbaikan —
+	# masuk dashboard sekarang hanya lewat Permainan baru / Lanjutkan.
+	# GameState.seed_demo_kebun() TETAP ada karena masih dipakai mode
+	# screenshot CLI (shotdash/shotland/dll) dan tombol Jelajahi kebun 3D.
 
 	v.add_child(UIKit.btn("Jelajahi kebun 3D", func():
 		GameState.start_new_game("pekerja_aktif"); GameState.seed_demo_kebun()

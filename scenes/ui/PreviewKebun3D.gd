@@ -73,7 +73,9 @@ func _update_cam() -> void:
 
 # ---------------------------------------------------------------- dunia
 func _build_env() -> void:
-	SkyKit.build_env(self, Vector3(-46, -40, 0), 0.0015)
+	# Tanpa awan mesh: ini widget preview di dalam UI, awan prosedural sudah
+	# cukup dan 9 mesh tambahan memberatkan HP kelas bawah.
+	SkyKit.build_env(self, Vector3(-46, -40, 0), 0.0015, false)
 
 func _ground(col: Color, size: float = 200.0) -> void:
 	var g := MeshInstance3D.new()

@@ -22,6 +22,47 @@ static func fertilize(b: Dictionary) -> String:
 	return "Pupuk %d jenis — Rp%s + %.1f HK. Sehat %.0f%%." % [
 		plan.get("components", []).size(), GameState._fmt(mat + lab), hk, float(b.get("health", 1.0)) * 100.0]
 
+## Pemupukan mengikuti JADWAL BULANAN (fertilizer_schedule.json).
+## `months` boleh berisi lebih dari satu bulan: bulan jatuh tempo + bulan yang
+## terlewat pada tahun tanam yang sama (user memilih untuk ikut mengaplikasikan).
+static func fertilize_schedule(b: Dictionary, months: Array) -> String:
+	if months.is_empty():
+		return "Tidak ada jadwal pemupukan yang jatuh tempo."
+	var total_mat := 0.0
+	var codes := {}
+	var applied: Array = []
+	for m in months:
+		var plan := Agronomy.monthly_fert_plan(b, int(m))
+		if plan.is_empty():
+			continue
+		total_mat += float(plan.get("total_cost", 0))
+		for c in plan.get("components", []):
+			codes[String(c.get("code", ""))] = true
+		applied.append(int(m))
+	if applied.is_empty():
+		return "Tidak ada jadwal pemupukan yang jatuh tempo."
+
+	var mat := int(round(total_mat * (1.0 - _discount())))
+	var area := float(b.get("area_ha", 1.0))
+	# Tiap bulan = satu kali aplikasi di lapangan, jadi upah dikali jumlah bulan.
+	var hk := Agronomy.labor_hk("pupuk", area) * float(applied.size())
+	var lab := int(round(hk * float(Database.params.get("daily_wage_rp", 120000))))
+	if not GameState.spend(mat + lab, "Pemupukan blok %s" % b.get("id", "?")):
+		return "Dana tidak cukup untuk pemupukan (butuh Rp%s)." % GameState._fmt(mat + lab)
+
+	for m in applied:
+		Agronomy.mark_fert_month(b, m)
+	Agronomy.apply_fertilize(b)
+	GameState.mark_objective("fertilized")
+
+	var warn := Agronomy.mixing_warning(codes.keys())
+	var msg := "Pupuk bulan %s — Rp%s + %.1f HK. Sehat %.0f%%." % [
+		", ".join(applied.map(func(x): return str(x))),
+		GameState._fmt(mat + lab), hk, float(b.get("health", 1.0)) * 100.0]
+	if warn != "":
+		msg += " ⚠ " + warn
+	return msg
+
 static func spray(b: Dictionary, location := "Piringan & pasar pikul", weed := "Rumput + LCC") -> String:
 	var plan := Agronomy.spray_plan(b, location, weed)
 	if not plan.get("found", false):

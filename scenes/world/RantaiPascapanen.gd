@@ -76,6 +76,8 @@ var _orbit_pitch := 0.0
 var _orbit_dist := 5.0
 var _dragging := false
 var _drag_last := Vector2.ZERO
+## D-pad sentuh yang mengubah PANDANGAN (lihat _apply_view_dpad).
+var _dpad
 const ORBIT_MIN_DIST := 0.12
 const ORBIT_MAX_DIST := 90.0
 const ORBIT_MIN_PITCH := -1.45
@@ -117,15 +119,71 @@ func _first_harvest_zone_idx() -> int:
 			return i
 	return 0
 
+## "-- shotpasca <idx>" untuk melompat ke zona tertentu dulu (zona lapangan
+## memperlihatkan horizon & awan; zona kecambah terlalu close-up).
 func _capture() -> void:
+	var a := OS.get_cmdline_user_args()
+	var zi := 0
+	for i in a.size():
+		if String(a[i]) == "shotpasca" and i + 1 < a.size() and String(a[i + 1]).is_valid_int():
+			zi = clampi(int(String(a[i + 1])), 0, _zones.size() - 1)
+	if zi > 0:
+		_goto_zone(zi, true)
+		_stage = zi
+	# "-- shotpasca wide": arahkan kamera ke langit untuk memeriksa awan.
+	# _process() selalu look_at(_look_cur), jadi cara menengadah adalah
+	# menaikkan titik pandangnya.
+	if a.has("wide"):
+		_cam_busy = false
+		_cam.position = Vector3(GLOBAL_CX - 40.0, 22.0, _total_len * 0.5 - 150.0)
+		_look_cur = Vector3(GLOBAL_CX, 68.0, _total_len * 0.5)
+	# "-- shotpasca holdview right": tahan satu arah D-pad lalu potret, untuk
+	# memeriksa arah putar/zoom benar-benar terasa sesuai labelnya.
+	var hold := ""
+	for i in a.size():
+		if String(a[i]) == "holdview" and i + 1 < a.size():
+			hold = String(a[i + 1])
 	await get_tree().create_timer(1.0).timeout
-	get_viewport().get_texture().get_image().save_png("user://pascapanen.png")
-	print("[pascapanen] screenshot saved")
+	var suffix := ""
+	if hold != "" and _dpad != null:
+		get_viewport().get_texture().get_image().save_png("user://pascapanen_before.png")
+		_dpad._set_dir(hold, true)
+		await get_tree().create_timer(1.0).timeout
+		_dpad.release_all()
+		suffix = "_" + hold
+	get_viewport().get_texture().get_image().save_png("user://pascapanen%s.png" % suffix)
+	print("[pascapanen] screenshot saved (zona %d%s)" % [zi, (" hold " + hold) if hold != "" else ""])
 	get_tree().quit()
 
-func _process(_dt: float) -> void:
+# --- D-pad pengubah PANDANGAN (bukan penggerak player) -----------------
+# Scene ini tidak punya karakter yang berjalan; tombol panah di sini memutar
+# dan memaju-mundurkan kamera, yaitu hal yang sama dengan drag & pinch tapi
+# lewat tombol — penting karena drag/pinch tidak selalu tertangkap di HP
+# Android (akar masalah yang sama dengan joystick lama).
+const VIEW_YAW_SPEED := 1.25    # radian/detik saat tombol kiri/kanan ditahan
+const VIEW_ZOOM_SPEED := 0.85   # laju maju/mundur (perkalian jarak per detik)
+
+func _process(dt: float) -> void:
+	_apply_view_dpad(dt)
 	if _cam:
 		_cam.look_at(_look_cur, Vector3.UP)
+
+func _apply_view_dpad(dt: float) -> void:
+	if _dpad == null or _cam == null or _cam_busy:
+		return
+	var v: Vector2 = _dpad.output
+	if v == Vector2.ZERO:
+		return
+	# Kiri/kanan = putar pandangan mengelilingi titik yang sedang dilihat.
+	if absf(v.x) > 0.01:
+		_orbit_yaw += v.x * VIEW_YAW_SPEED * dt
+	# Atas = maju (mendekat), bawah = mundur (menjauh).
+	# output.y bernilai -1 untuk atas, jadi jaraknya mengecil — persis arah
+	# yang diharapkan tanpa perlu dibalik.
+	if absf(v.y) > 0.01:
+		_orbit_dist = clampf(_orbit_dist * (1.0 + v.y * VIEW_ZOOM_SPEED * dt),
+			ORBIT_MIN_DIST, ORBIT_MAX_DIST)
+	_apply_orbit()
 
 ## Orbit-drag (mouse/touch) + scroll/pinch zoom di sekitar `_look_cur` — aktif
 ## kapan saja kamera TIDAK sedang auto-travel (_cam_busy), jadi pemain bisa bebas
@@ -315,7 +373,17 @@ func _build_zone(zone: Dictionary) -> void:
 
 # ------------------------------------------------------------ dunia & kamera
 func _build_world() -> void:
-	SkyKit.build_env(self, Vector3(-50, -35, 0))
+	# Awan dipasang manual (bukan lewat build_env) karena dunia ini memanjang
+	# di sumbu Z dan bergeser di X — sebaran awan default yang berpusat di
+	# origin tidak akan masuk pandangan kamera.
+	SkyKit.build_env(self, Vector3(-50, -35, 0), 0.0012, false)
+	var clouds := CloudField.new()
+	clouds.configure(
+		Vector3(GLOBAL_CX, 0, _total_len * 0.5),
+		_max_w, _total_len,
+		12)   # dunia panjang -> awan lebih banyak agar tidak terlihat jarang
+	clouds.height = 72.0
+	add_child(clouds)
 
 	var ground := MeshInstance3D.new()
 	var pm := PlaneMesh.new()
@@ -641,7 +709,39 @@ func _build_ui() -> void:
 	_action_btn.pressed.connect(_on_action)
 	col.add_child(_action_btn)
 
+	_build_view_dpad(layer)
 	_refresh_panel()
+
+## D-pad pengubah pandangan, ditaruh DI ATAS panel penjelasan (panel memakai
+## 220 px paling bawah, kalau tidak digeser tombolnya tertimbun).
+func _build_view_dpad(layer: CanvasLayer) -> void:
+	const PANEL_H := 220
+	_dpad = load("res://scenes/world/TouchDPad.gd").new()
+	layer.add_child(_dpad)
+	_dpad.anchor_bottom_left(14, PANEL_H + 42)
+
+	# Keterangan: di scene lain panah menggerakkan pemain, di sini mengubah
+	# kamera — tanpa label pemain akan mengira ini kontrol jalan.
+	var cap := Label.new()
+	cap.text = "PANDANGAN  ▲▼ maju-mundur  ◀▶ putar"
+	cap.add_theme_font_size_override("font_size", 10)
+	cap.add_theme_color_override("font_color", Color(1, 1, 1, 0.85))
+	var cap_bg := StyleBoxFlat.new()
+	cap_bg.bg_color = Color(0.06, 0.09, 0.07, 0.72)
+	cap_bg.set_corner_radius_all(6)
+	cap_bg.set_content_margin_all(6)
+	var cap_panel := PanelContainer.new()
+	cap_panel.add_theme_stylebox_override("panel", cap_bg)
+	cap_panel.add_child(cap)
+	cap_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(cap_panel)
+	cap_panel.anchor_left = 0.0
+	cap_panel.anchor_right = 0.0
+	cap_panel.anchor_top = 1.0
+	cap_panel.anchor_bottom = 1.0
+	cap_panel.offset_left = 14
+	cap_panel.offset_top = -(PANEL_H + 42 + 204 + 26)
+	cap_panel.offset_bottom = -(PANEL_H + 42 + 204 + 2)
 
 func _refresh_panel() -> void:
 	_action_btn.disabled = false

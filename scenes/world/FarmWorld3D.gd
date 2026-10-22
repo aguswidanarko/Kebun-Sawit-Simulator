@@ -13,7 +13,7 @@ var _palm_asset := ""
 var _palm_h := 8.0
 var _player: CharacterBody3D
 var _cam: Camera3D
-var _joystick
+var _dpad
 var _block: Dictionary = {}
 var _palm_pos: Array = []
 var _near := false
@@ -87,8 +87,8 @@ var _shot_mode := false
 func _process(delta: float) -> void:
 	if _shot_mode or _player == null or _cam == null:
 		return
-	if _joystick:
-		_player.joystick = _joystick.output
+	if _dpad:
+		_player.joystick = _dpad.output
 	_clamp_to_boundary()
 	var target := _player.global_position
 	var desired := target + Vector3(0, 4.5, 8.5)
@@ -472,11 +472,12 @@ func _build_hud() -> void:
 	top.add_child(_mk_btn("⏭ +15 Hari", func(): TimeManager.advance_day(15); _show_toast("Maju 15 hari."); _update_status()))
 	top.add_child(_mk_btn("← Kebun", func(): get_tree().change_scene_to_file("res://scenes/DashboardScreen.tscn")))
 
-	# Joystick kiri bawah
-	_joystick = load("res://scenes/world/VirtualJoystick.gd").new()
-	_joystick.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_joystick.position = Vector2(30, -230)
-	layer.add_child(_joystick)
+	# D-pad sentuh kiri bawah (pengganti VirtualJoystick — lihat TouchDPad.gd).
+	# Anchor diset SETELAH add_child: _ready() milik D-pad menetapkan size dulu,
+	# kalau anchor diset sebelum add_child ia akan ditimpa (bug lama joystick).
+	_dpad = load("res://scenes/world/TouchDPad.gd").new()
+	layer.add_child(_dpad)
+	_dpad.anchor_bottom_left(18, 24)
 
 	# Tombol Aksi (kanan bawah, muncul saat dekat pohon/TPH/truk)
 	var toggle_aksi := func():

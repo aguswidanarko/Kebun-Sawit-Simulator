@@ -11,6 +11,11 @@ const ACCENT_300 := Color("ffc4b8")
 const ACCENT_600 := Color("dd2b0f")
 const ACCENT_700 := Color("ae1800")
 const ACCENT_800 := Color("7c1405")
+# Bintang skor tugas lapangan: kuning emas standar. Sebelumnya bintang dipakai
+# warna INK (hitam) di layar hasil dan ACCENT (merah) di daftar tugas, sehingga
+# tidak terbaca sebagai bintang penilaian.
+const GOLD := Color("f5b301")
+const GOLD_DARK := Color("c98f00")
 const N300 := Color("d7d3d3")
 const N500 := Color("9b9797")
 const N600 := Color("7d7979")
@@ -404,6 +409,74 @@ static func toast(host: Node, txt: String) -> void:
 	p.add_child(l)
 	layer.add_child(p)
 	host.get_tree().create_timer(2.6).timeout.connect(func(): layer.queue_free())
+
+# ---------------------------------------------------------------- prompt
+## Dialog modal yang HARUS diklik (beda dari toast yang hilang sendiri).
+## Dipakai untuk syarat tugas lapangan & reminder pemupukan.
+## `on_ok` dipanggil setelah dialog ditutup.
+static func prompt(host: Node, title: String, body: String,
+		ok_text := "OK", on_ok := Callable(), accent := false) -> CanvasLayer:
+	SoundManager.notify()
+	var layer := CanvasLayer.new()
+	layer.layer = 95
+	host.add_child(layer)
+
+	# Backdrop menelan sentuhan supaya UI di belakang tidak bisa ditekan.
+	var dim := ColorRect.new()
+	dim.color = Color(INK.r, INK.g, INK.b, 0.6)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(dim)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.custom_minimum_size = Vector2(312, 0)
+	var sb := box(BG, ACCENT if accent else INK, 2, 0)
+	panel.add_theme_stylebox_override("panel", sb)
+	layer.add_child(panel)
+
+	var m := margin(18, 18, 18, 18)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 10)
+	m.add_child(v)
+	panel.add_child(m)
+
+	if title != "":
+		# UIKit.wrap, BUKAN wrap() global GDScript (wrap(value, min, max)).
+		v.add_child(UIKit.wrap(label(title, 18, INK, 800)))
+	var body_lbl := label(body, 13, N700)
+	body_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(body_lbl)
+
+	v.add_child(btn(ok_text, func():
+		layer.queue_free()
+		if on_ok.is_valid():
+			on_ok.call()
+		, "primary", 15, 48))
+	return layer
+
+## Tampilkan beberapa prompt BERURUTAN: dialog ke-2 baru muncul setelah
+## dialog ke-1 diklik OK. Dipakai saat lebih dari satu blok perlu reminder
+## pemupukan di hari yang sama.
+##   items = [{ "title": String, "body": String, "ok": String (opsional),
+##              "accent": bool (opsional) }, ...]
+## `on_done` dipanggil setelah semua dialog selesai.
+static func prompt_queue(host: Node, items: Array, on_done := Callable()) -> void:
+	if items.is_empty():
+		if on_done.is_valid():
+			on_done.call()
+		return
+	var first: Dictionary = items[0]
+	var rest: Array = items.slice(1)
+	prompt(host,
+		String(first.get("title", "")),
+		String(first.get("body", "")),
+		String(first.get("ok", "OK")),
+		func(): prompt_queue(host, rest, on_done),
+		bool(first.get("accent", false)))
 
 # ---------------------------------------------------------------- format
 ## Rp ringkas gaya design: 84.300.000 -> "Rp84,3 jt"; 1.200.000.000 -> "Rp1,2 M".

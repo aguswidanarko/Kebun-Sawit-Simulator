@@ -8,6 +8,11 @@ var params: Dictionary = {}
 var seeds: Array = []
 var production: Array = []
 var fertilizer: Array = []
+## Jadwal pemupukan bulan-per-bulan (gram/pokok) dari rekomendasi_pemupukan.xlsx.
+## Berbeda dari `fertilizer` (fertilizer_standard.json) yang per-tahun/kelas lahan:
+## jadwal ini menentukan KAPAN memupuk dan APA yang dipakai tiap bulan.
+var fertilizer_schedule: Dictionary = {}
+var _fert_by_month: Dictionary = {}    # bulan(int) -> {kode: gram per pokok}
 var control: Array = []
 var products: Array = []
 var pest_control: Array = []
@@ -29,6 +34,9 @@ func _ready() -> void:
 	seeds = _load_array("res://data/seed_catalog.json")
 	production = _load_array("res://data/production_standard.json")
 	fertilizer = _load_array("res://data/fertilizer_standard.json")
+	fertilizer_schedule = _load_dict("res://data/fertilizer_schedule.json")
+	for e in fertilizer_schedule.get("schedule", []):
+		_fert_by_month[int(e.get("bulan", -1))] = e.get("pupuk", {})
 	control = _load_array("res://data/control_standard.json")
 	products = _load_array("res://data/product_catalog.json")
 	pest_control = _load_array("res://data/pest_control.json")
@@ -97,6 +105,30 @@ func get_production_row(age_year: int, land_class: String) -> Dictionary:
 func get_fertilizer(age_year: int, land_class: String) -> Array:
 	return fertilizer.filter(func(r):
 		return int(r.get("plant_age_year", -1)) == age_year and r.get("land_class") == land_class)
+
+# --- Query jadwal pemupukan bulanan ---
+## Dosis bulan ini: { kode_pupuk: gram per pokok }. Kosong = tidak ada
+## pemupukan terjadwal di bulan tersebut.
+func fert_schedule_month(bulan: int) -> Dictionary:
+	return _fert_by_month.get(bulan, {})
+
+## Semua bulan berjadwal dalam rentang (bulan_dari, bulan_sampai] — terurut.
+## Dipakai untuk mengumpulkan reminder saat user melompat 15 hari.
+func fert_months_between(dari_exclusive: int, sampai_inclusive: int) -> Array:
+	var out: Array = []
+	for e in fertilizer_schedule.get("schedule", []):
+		var b := int(e.get("bulan", -1))
+		if b > dari_exclusive and b <= sampai_inclusive:
+			out.append(b)
+	out.sort()
+	return out
+
+## Bulan terakhir yang punya jadwal (akhir siklus tanaman).
+func fert_last_month() -> int:
+	var last := 0
+	for e in fertilizer_schedule.get("schedule", []):
+		last = maxi(last, int(e.get("bulan", 0)))
+	return last
 
 # --- Query semprot gulma (umur + lokasi + gulma). mix_option mengelompokkan komponen campuran ---
 func get_control(age_year: int, location: String, organism: String) -> Array:

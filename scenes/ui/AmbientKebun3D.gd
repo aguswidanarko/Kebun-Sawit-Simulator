@@ -15,7 +15,8 @@ var _center := Vector3((COLS - 1) * SPACING * 0.5, 0, (ROWS - 1) * SPACING * 0.5
 
 func _ready() -> void:
 	# Lingkungan + langit dengan horizon & kabut tipis
-	SkyKit.build_env(self, Vector3(-45, -42, 0), 0.0016)
+	# Tanpa awan mesh: latar belakang menu, cukup awan prosedural.
+	SkyKit.build_env(self, Vector3(-45, -42, 0), 0.0016, false)
 
 	# Tanah luas
 	var ground := MeshInstance3D.new()

@@ -40,6 +40,7 @@ func _ready() -> void:
 		m.rotation.y = PI            # hadap menjauh kamera (3rd person)
 		_anim = _find_anim(m)
 		if _anim:
+			_setup_loop_modes()
 			_play("Idle")
 	else:
 		_fallback_capsule()
@@ -79,8 +80,36 @@ func _input_vector() -> Vector2:
 	return v.limit_length(1.0)
 
 # --- animasi ---
+
+## Klip yang harus berulang selama kondisinya bertahan. Klip lain (Working,
+## emote kosmetik) sengaja sekali jalan.
+const LOOPING_CLIPS := ["idle", "walk", "run"]
+
+## Animasi hasil impor .glb default-nya loop_mode = NONE, jadi "Walk" berhenti
+## sendiri di frame terakhir sementara pemain masih bergerak — inilah penyebab
+## kaki membeku / karakter tampak melayang. Dipanggil sekali di _ready().
+func _setup_loop_modes() -> void:
+	if _anim == null:
+		return
+	for a in _anim.get_animation_list():
+		var clip := _anim.get_animation(a)
+		if clip == null:
+			continue
+		var lower := a.to_lower()
+		var should_loop := false
+		for k in LOOPING_CLIPS:
+			if k in lower:
+				should_loop = true
+				break
+		clip.loop_mode = Animation.LOOP_LINEAR if should_loop else Animation.LOOP_NONE
+
 func _play(key: String) -> void:
-	if _anim == null or _cur_anim == key:
+	if _anim == null:
+		return
+	# Jangan restart klip yang sama tiap frame (gerakannya akan tersendat),
+	# TAPI kalau klipnya sudah berhenti ia wajib diputar ulang — pengaman
+	# kedua kalau ada klip yang lolos dari _setup_loop_modes().
+	if _cur_anim == key and _anim.is_playing():
 		return
 	var name := _anim_named(key)
 	if name != "":

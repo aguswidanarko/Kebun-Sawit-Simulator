@@ -16,12 +16,17 @@ var _sheet: CanvasLayer
 var _sheet_tab := "ringkas"
 var _sheet_i := -1
 var _nursery_holder: MarginContainer
+var _ft_holder: MarginContainer
 var _order_qty := 200
+## Tab Pupuk: ikut mengaplikasikan pemupukan yang terlewat tahun ini?
+var _fert_include_missed := false
 
 func _ready() -> void:
 	_build()
 	GameState.cash_changed.connect(func(_c): _refresh())
-	GameState.day_changed.connect(func(_d): _refresh())
+	GameState.day_changed.connect(func(_d):
+		_refresh()
+		_show_fert_reminders())
 	GameState.blocks_changed.connect(_refresh)
 	GameState.cosmetics_changed.connect(_refresh)
 	GameState.break_even_achieved.connect(_on_break_even)
@@ -40,6 +45,10 @@ func _capture_dash() -> void:
 	_open_sheet(2)   # plot dgn hama
 	await get_tree().create_timer(0.6).timeout
 	get_viewport().get_texture().get_image().save_png("user://sheet.png")
+	_sheet_tab = "pupuk"   # tab jadwal pemupukan bulanan
+	_render_sheet()
+	await get_tree().create_timer(0.6).timeout
+	get_viewport().get_texture().get_image().save_png("user://pupuk.png")
 	_close_sheet()
 	_open_plant_sheet(3)   # plot "siap" -> Tanam sheet
 	await get_tree().create_timer(0.6).timeout
@@ -77,6 +86,18 @@ func _build() -> void:
 	_nursery_holder = UIKit.margin(16, 0, 16, 4)
 	content.add_child(_nursery_holder)
 
+	# Tombol Tugas Lapangan — DI BAWAH pembibitan, DI ATAS peta blok.
+	# Merah ("primary") karena hanya ditampilkan saat tugas memang tersedia:
+	# syaratnya user sudah punya lahan DAN lahan itu sudah ditanam sawit.
+	# Visibilitas diatur ulang tiap _refresh() (lihat _field_tasks_available).
+	_ft_holder = UIKit.margin(16, 4, 16, 8)
+	var ft_btn := UIKit.btn("Tugas Lapangan  ›",
+		func(): get_tree().change_scene_to_file("res://scenes/FieldTasksScreen.tscn"),
+		"primary", 14, 44)
+	ft_btn.icon = load("res://assets/ui/icons/gamepad-2.svg")
+	_ft_holder.add_child(ft_btn)
+	content.add_child(_ft_holder)
+
 	# judul peta
 	var pm := UIKit.margin(16, 4, 16, 8)
 	var ph := HBoxContainer.new()
@@ -108,15 +129,6 @@ func _build() -> void:
 	lm.add_child(leg)
 	content.add_child(lm)
 
-	# Tombol Tugas Lapangan
-	var ftm := UIKit.margin(16, 4, 16, 16)
-	var ft_btn := UIKit.btn("Tugas Lapangan  ›",
-		func(): get_tree().change_scene_to_file("res://scenes/FieldTasksScreen.tscn"),
-		"secondary", 14, 44)
-	ft_btn.icon = load("res://assets/ui/icons/gamepad-2.svg")
-	ftm.add_child(ft_btn)
-	content.add_child(ftm)
-
 	_refresh()
 
 func _header() -> Control:
@@ -137,25 +149,39 @@ func _header() -> Control:
 
 	var prof := Database.get_profile(GameState.profile_id)
 
-	# baris atas: kicker + nama | icon buttons
-	var top := HBoxContainer.new()
+	# BARIS 1: tombol ikon, lebar dibagi rata selebar layar — pola yang sama
+	# dengan tab bar bawah (UIKit.tabbar) supaya posisinya TIDAK pernah
+	# bergeser seberapa pun panjang nama kebun.
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 6)
+	for spec in [
+		["user", func(): get_tree().change_scene_to_file("res://scenes/ProfileScreen.tscn")],
+		["shirt", func(): get_tree().change_scene_to_file("res://scenes/CharacterCustomization.tscn")],
+		["shopping-bag", func(): get_tree().change_scene_to_file("res://scenes/CosmeticShop.tscn")],
+		["star", func(): get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn")],
+		["shopping-basket", func(): get_tree().change_scene_to_file("res://scenes/IAPScreen.tscn")],
+		["menu", func():
+			GameState.save_game()
+			get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")],
+	]:
+		var b := _icon_btn(String(spec[0]), spec[1] as Callable)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.size_flags_stretch_ratio = 1.0
+		btn_row.add_child(b)
+	v.add_child(btn_row)
+
+	# BARIS 2: tahun/hari/kesulitan + nama kebun, disusun DI BAWAH tombol.
+	# autowrap dipasang supaya nama kebun yang panjang turun baris, bukan
+	# melebar ke luar layar.
 	var tl := VBoxContainer.new()
-	tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tl.add_theme_constant_override("separation", 2)
 	kicker_label = UIKit.kicker("", Color(UIKit.BG.r, UIKit.BG.g, UIKit.BG.b, 0.85))
+	kicker_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tl.add_child(kicker_label)
 	kname_label = UIKit.label("", 26, UIKit.BG, 800)
+	kname_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tl.add_child(kname_label)
-	top.add_child(tl)
-	top.add_child(_icon_btn("user", func(): get_tree().change_scene_to_file("res://scenes/ProfileScreen.tscn")))
-	top.add_child(_icon_btn("shirt", func(): get_tree().change_scene_to_file("res://scenes/CharacterCustomization.tscn")))
-	top.add_child(_icon_btn("shopping-bag", func(): get_tree().change_scene_to_file("res://scenes/CosmeticShop.tscn")))
-	top.add_child(_icon_btn("star", func(): get_tree().change_scene_to_file("res://scenes/HallOfFameScreen.tscn")))
-	top.add_child(_icon_btn("shopping-basket", func(): get_tree().change_scene_to_file("res://scenes/IAPScreen.tscn")))
-	top.add_child(_icon_btn("menu", func():
-		GameState.save_game()
-		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")))
-	v.add_child(top)
+	v.add_child(tl)
 
 	var sp := Control.new()
 	sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -273,8 +299,21 @@ func _refresh() -> void:
 	kname_label.text = GameState.display_kebun_name()
 	meta_ha.text = "%d ha" % ha + (" · " if need > 0 else "")
 	meta_need.text = ("%d perlu tindakan" % need) if need > 0 else ""
+	# Tugas Lapangan hanya tampil kalau sudah ada lahan yang ditanam sawit.
+	if _ft_holder != null:
+		_ft_holder.visible = GameState.has_planted_land()
 	_rebuild_nursery()
 	_rebuild_grid()
+
+## Prompt reminder pemupukan, satu per satu (blok pertama dulu; blok kedua
+## baru muncul setelah user menekan OK). Dipanggil tiap hari berganti —
+## termasuk saat melompat 15 hari, sehingga jadwal yang terlewati tetap
+## ditampilkan berurutan.
+func _show_fert_reminders() -> void:
+	var items := GameState.collect_fert_reminders()
+	if items.is_empty():
+		return
+	UIKit.prompt_queue(self, items)
 
 # ---------------------------------------------------------------- pembibitan
 func _rebuild_nursery() -> void:
@@ -324,12 +363,12 @@ func _rebuild_nursery() -> void:
 			var sisa: int = max(0, int(p.get("order_days", 30)) - (GameState.day - int(nur.get("order_day", GameState.day))))
 			v.add_child(UIKit.label("Kecambah dalam perjalanan", 13, UIKit.INK, 800))
 			v.add_child(UIKit.bar(1.0 - float(sisa) / max(1.0, float(p.get("order_days", 30))), UIKit.INK))
-			v.add_child(UIKit.meta("%s ×%d · tiba ±%d hari lagi · areal bibitan sedang disiapkan" % [
-				seed.get("variety_name", "?"), qty, sisa]))
+			v.add_child(UIKit.wrap(UIKit.meta("%s ×%d · tiba ±%d hari lagi · areal bibitan sedang disiapkan" % [
+				seed.get("variety_name", "?"), qty, sisa])))
 		"pn":
-			v.add_child(UIKit.label("Pre Nursery — umur %d bln (%s)" % [m, "%d daun" % clampi(m, 0, 3) if m > 0 else "baru tanam"], 13, UIKit.INK, 800))
+			v.add_child(UIKit.wrap(UIKit.label("Pre Nursery — umur %d bln (%s)" % [m, "%d daun" % clampi(m, 0, 3) if m > 0 else "baru tanam"], 13, UIKit.INK, 800)))
 			v.add_child(UIKit.bar(float(m) / 3.0, UIKit.INK))
-			v.add_child(UIKit.meta("%s · %d bibit · transplanting ke MN umur 3 bln" % [seed.get("variety_name", "?"), qty]))
+			v.add_child(UIKit.wrap(UIKit.meta("%s · %d bibit · transplanting ke MN umur 3 bln" % [seed.get("variety_name", "?"), qty])))
 			if not bool(nur.get("mn_prepared", false)):
 				if urgent:
 					v.add_child(UIKit.wrap(UIKit.label("⚠ Wajib siapkan Main Nursery sebelum umur 3 bulan!", 12, UIKit.ACCENT_800, 600)))
@@ -338,18 +377,18 @@ func _rebuild_nursery() -> void:
 			else:
 				v.add_child(UIKit.meta("✓ Main Nursery siap — transplanting otomatis umur 3 bln"))
 		"mn":
-			v.add_child(UIKit.label("Main Nursery — umur %d bln" % m, 13, UIKit.INK, 800))
+			v.add_child(UIKit.wrap(UIKit.label("Main Nursery — umur %d bln" % m, 13, UIKit.INK, 800)))
 			v.add_child(UIKit.bar(float(m) / 12.0, UIKit.INK))
 			var next_sel := "final 12 bln"
 			for sm in p.get("selection_points_mn", [6, 9]):
 				if m < int(sm):
 					next_sel = "%d bln" % int(sm)
 					break
-			v.add_child(UIKit.meta("%s · %d bibit · seleksi berikut: umur %s · siap umur 12 bln" % [
-				seed.get("variety_name", "?"), qty, next_sel]))
+			v.add_child(UIKit.wrap(UIKit.meta("%s · %d bibit · seleksi berikut: umur %s · siap umur 12 bln" % [
+				seed.get("variety_name", "?"), qty, next_sel])))
 		"siap":
-			v.add_child(UIKit.label("🌱 %d bibit siap tanam" % qty, 14, UIKit.INK, 800))
-			v.add_child(UIKit.meta("%s · lolos seleksi final · tanam ke blok 'Lahan siap' (143/blok) atau jual" % seed.get("variety_name", "?")))
+			v.add_child(UIKit.wrap(UIKit.label("🌱 %d bibit siap tanam" % qty, 14, UIKit.INK, 800)))
+			v.add_child(UIKit.wrap(UIKit.meta("%s · lolos seleksi final · tanam ke blok 'Lahan siap' (143/blok) atau jual" % seed.get("variety_name", "?"))))
 			var row2 := HBoxContainer.new()
 			row2.add_theme_constant_override("separation", 8)
 			var bj := UIKit.btn("Jual bibit", _open_sell_sheet, "primary")
@@ -586,6 +625,7 @@ func _sheet_base() -> PanelContainer:
 func _open_sheet(i: int) -> void:
 	_sheet_i = i
 	_sheet_tab = "ringkas"
+	_fert_include_missed = false
 	_render_sheet()
 
 func _close_sheet() -> void:
@@ -796,25 +836,84 @@ func _tab_pupuk(v: VBoxContainer, p: Dictionary) -> void:
 	nl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.add_child(nl)
 	v.add_child(note)
-	var plan := Agronomy.fertilizer_plan(p)
-	var comps: Array = plan.get("components", [])
-	if comps.is_empty():
-		v.add_child(UIKit.wrap(UIKit.meta("Belum ada rekomendasi pupuk untuk umur ini.", 12)))
+	# Rekomendasi kini mengikuti JADWAL BULANAN, bukan norma per tahun.
+	var now_m := Agronomy.block_age_months(p)
+	v.add_child(UIKit.wrap(UIKit.meta("Umur blok %d bulan · tahun tanam ke-%d" % [
+		now_m, Agronomy.plant_year_of_month(maxi(now_m, 1))], 12)))
+
+	var due: Array = Agronomy.missed_fert_months(p)
+	if due.is_empty():
+		v.add_child(UIKit.wrap(UIKit.meta(
+			"Tidak ada jadwal pemupukan yang jatuh tempo untuk blok ini. Prompt akan muncul saat bulan berikutnya tiba.", 12)))
 		return
+
+	# Jadwal terbaru = yang jatuh tempo sekarang; sisanya = terlewat tahun ini.
+	var target: int = int(due[-1])
+	var earlier: Array = due.slice(0, due.size() - 1)
+	var plan := Agronomy.monthly_fert_plan(p, target)
+
 	v.add_child(UIKit.rule())
-	for c in comps:
+	v.add_child(UIKit.label("Jadwal bulan ke-%d" % target, 13, UIKit.INK, 800))
+	_fert_rows(v, plan)
+
+	var warn := String(plan.get("warning", ""))
+	if warn != "":
+		var wbox := PanelContainer.new()
+		wbox.add_theme_stylebox_override("panel", UIKit.box(UIKit.ACCENT_100, UIKit.ACCENT, 1, 10))
+		wbox.add_child(UIKit.wrap(UIKit.label("⚠ " + warn, 12, UIKit.ACCENT_800)))
+		v.add_child(wbox)
+
+	# Pupuk yang terlewat pada TAHUN TANAM YANG SAMA — opsional diaplikasikan.
+	var months: Array = [target]
+	if not earlier.is_empty():
+		var extra_cost := 0
+		for m in earlier:
+			extra_cost += int((Agronomy.monthly_fert_plan(p, int(m)) as Dictionary).get("total_cost", 0))
+		# Teks CheckBox TIDAK bisa wrap, jadi labelnya dibuat pendek dan
+		# rinciannya ditaruh di baris meta terpisah yang bisa turun baris.
+		var cb := CheckBox.new()
+		cb.text = "Ikut pupuk %d bulan yang terlewat" % earlier.size()
+		cb.add_theme_font_size_override("font_size", 12)
+		cb.button_pressed = _fert_include_missed
+		cb.toggled.connect(func(on):
+			_fert_include_missed = on
+			_render_sheet())
+		v.add_child(cb)
+		v.add_child(UIKit.wrap(UIKit.meta(
+			"Bulan %s pada tahun tanam ini belum dipupuk — tambah Rp%s." % [
+				", ".join(earlier.map(func(x): return str(x))), GameState._fmt(extra_cost)])))
+		if _fert_include_missed:
+			months = earlier.duplicate()
+			months.append(target)
+
+	var disc := 1.0 - float(GameState.profile_mods().get("input_discount", 0.0))
+	var mat := 0
+	for m in months:
+		mat += int(round(float((Agronomy.monthly_fert_plan(p, int(m)) as Dictionary).get("total_cost", 0)) * disc))
+	var lab := Agronomy.labor_cost("pupuk", float(p.get("area_ha", 1.0))) * months.size()
+	v.add_child(UIKit.wrap(UIKit.meta("Bahan Rp%s + upah HK Rp%s" % [
+		GameState._fmt(mat), GameState._fmt(lab)], 12)))
+	v.add_child(UIKit.btn("Pupuk %s — Rp%s" % [p.get("id"), GameState._fmt(mat + lab)], func():
+		_fert_include_missed = false
+		_do(Actions.fertilize_schedule(p, months)), "primary"))
+
+## Satu komponen = dua baris. Sebelumnya semua detail dipadatkan di satu baris
+## sehingga terdorong ke luar layar di HP sempit.
+func _fert_rows(v: VBoxContainer, plan: Dictionary) -> void:
+	for c in plan.get("components", []):
 		var row := HBoxContainer.new()
-		var nm := UIKit.label(String(c.get("code", "?")).to_upper(), 13)
+		var nm := UIKit.label(String(c.get("code", "?")).to_upper(), 13, UIKit.INK, 600)
 		nm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(nm)
-		row.add_child(UIKit.meta("%.0f kg · Rp%s" % [float(c.get("kg", 0)), GameState._fmt(int(c.get("cost", 0)))]))
+		row.add_child(UIKit.label("%s/pokok" % Agronomy.fmt_kg(float(c.get("g_per_palm", 0))),
+			13, UIKit.INK, 800))
 		v.add_child(row)
+		# Format dulu, BARU ganti titik jadi koma — kalau format string-nya yang
+		# di-replace, "%.1f" ikut berubah jadi "%,1f" dan rusak.
+		var kg_s := ("%.1f" % float(c.get("kg_total", 0))).replace(".", ",")
+		v.add_child(UIKit.wrap(UIKit.meta("%s kg untuk %d pokok · Rp%s" % [
+			kg_s, int(plan.get("palms", 0)), GameState._fmt(int(c.get("cost", 0)))])))
 		v.add_child(UIKit.rule(1))
-	var mat := int(round(float(plan.get("total_cost", 0)) * (1.0 - float(GameState.profile_mods().get("input_discount", 0.0)))))
-	var lab := Agronomy.labor_cost("pupuk", float(p.get("area_ha", 1.0)))
-	v.add_child(UIKit.meta("Bahan Rp%s + upah HK Rp%s" % [GameState._fmt(mat), GameState._fmt(lab)], 12))
-	v.add_child(UIKit.btn("Pupuk %s — Rp%s" % [p.get("id"), GameState._fmt(mat + lab)], func():
-		_do(Actions.fertilize(p)), "primary"))
 
 func _tab_semprot(v: VBoxContainer, p: Dictionary) -> void:
 	var eff := Agronomy.spray_effectiveness(true)

@@ -15,7 +15,9 @@ static var _shader_cached: Shader
 
 ## Pasang WorldEnvironment (langit biru+awan, kabut, filmic) + DirectionalLight3D.
 ## Panggil sekali per scene. Kembalikan DirectionalLight3D kalau perlu diatur lagi.
-static func build_env(parent: Node3D, sun_deg := Vector3(-48, -38, 0), fog_density := 0.0012) -> DirectionalLight3D:
+## `with_clouds` = pasang juga awan 3D (CloudField). Matikan untuk scene yang
+## kameranya tidak pernah melihat langit (hemat draw call).
+static func build_env(parent: Node3D, sun_deg := Vector3(-48, -38, 0), fog_density := 0.0012, with_clouds := true) -> DirectionalLight3D:
 	var we := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_SKY
@@ -24,6 +26,12 @@ static func build_env(parent: Node3D, sun_deg := Vector3(-48, -38, 0), fog_densi
 		_shader_cached = load(SKY_SHADER)
 	var sm := ShaderMaterial.new()
 	sm.shader = _shader_cached
+	# Awan prosedural diturunkan dari 0.45 -> 0.18: sejak ada awan mesh 3D
+	# (CloudField) lapisan noise ini cuma jadi kabut tipis di kejauhan, kalau
+	# tetap 0.45 langit jadi penuh dobel awan.
+	if with_clouds:
+		sm.set_shader_parameter("cloud_coverage", 0.18)
+		sm.set_shader_parameter("cloud_softness", 0.26)
 	sky.sky_material = sm
 	e.sky = sky
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
@@ -41,6 +49,9 @@ static func build_env(parent: Node3D, sun_deg := Vector3(-48, -38, 0), fog_densi
 	sun.light_energy = 1.2
 	sun.shadow_enabled = true
 	parent.add_child(sun)
+
+	if with_clouds:
+		parent.add_child(CloudField.new())
 	return sun
 
 ## Material tanah kecoklatan bertekstur (ganti ground_diff.jpg mentah yg kuning-hijau).

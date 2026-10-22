@@ -97,6 +97,7 @@ func _card(lo: Dictionary, idx: int) -> PanelContainer:
 	bv.add_child(UIKit.wrap(UIKit.meta(String(lo.get("desc", "")))))
 	var price := int(lo.get("price_rp", 0))
 	var clearing := int(Database.params.get("clearing_cost_rp", 0)) if bool(lo.get("needs_clearing", false)) else 0
+	var total := price + clearing
 	var pr := HBoxContainer.new()
 	pr.add_theme_constant_override("separation", 8)
 	pr.add_child(UIKit.label("Rp%s" % GameState._fmt(price), 20, UIKit.INK, 800))
@@ -104,12 +105,27 @@ func _card(lo: Dictionary, idx: int) -> PanelContainer:
 		pr.add_child(UIKit.meta("+ pembukaan Rp%s · %d hari" % [
 			GameState._fmt(clearing), int(Database.params.get("clearing_days", 30))]))
 	bv.add_child(pr)
-	var total := price + clearing
+
+	# TOTAL ditulis eksplisit. Sebelumnya hanya harga lahan yang tampil besar
+	# dan biaya pembukaan jadi teks kecil, sehingga lahan Rp15 jt yang
+	# sebenarnya butuh Rp18,5 jt terbaca "saldo cukup" padahal belum.
+	if clearing > 0:
+		bv.add_child(UIKit.wrap(UIKit.label("Total yang harus dibayar: Rp%s" % GameState._fmt(total),
+			13, UIKit.INK, 800)))
+
 	var afford := GameState.cash >= total
-	var b := UIKit.btn("Beli lahan ini" if afford else "Saldo tidak cukup",
+	var kurang := total - GameState.cash
+	var btn_text := "Beli lahan ini"
+	if not afford:
+		btn_text = "Kurang Rp%s — saldo Rp%s" % [GameState._fmt(kurang), GameState._fmt(GameState.cash)]
+	var b := UIKit.btn(btn_text,
 		func(): _buy(String(lo.get("id"))), "primary" if afford else "secondary")
 	b.disabled = not afford
 	bv.add_child(b)
+	if not afford:
+		bv.add_child(UIKit.wrap(UIKit.meta("Butuh Rp%s total (lahan Rp%s + pembukaan Rp%s)." % [
+			GameState._fmt(total), GameState._fmt(price), GameState._fmt(clearing)]
+			if clearing > 0 else "Butuh Rp%s total." % GameState._fmt(total))))
 	return card
 
 func _buy(offer_id: String) -> void:
